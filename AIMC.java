@@ -28,6 +28,7 @@ public class AIMC extends JPanel {
     private double serviceRate = 1.0;
 
     private PriorityQueue<Event> eventList;
+    private PriorityQueue<Car> carList;
     private double clock;
 
     // Statistics.
@@ -38,6 +39,7 @@ public class AIMC extends JPanel {
 
     void reset() {
     	eventList = new PriorityQueue<Event>();
+        carList = new PriorityQueue<Car>();
     	queues = new LinkedList [k];
         for (int i = 0; i < k; i++) {
             queues[i] = new LinkedList<Car>();
@@ -83,41 +85,22 @@ public class AIMC extends JPanel {
     }
 
     // STILL IN PROGRESS
-    void handleArrival(Event e, int fromLane) {
+    void handleArrival(Event e) {
     	// For an arrival, we need to put the car in a queue, and
     	// schedule a departure for that queue if there isn't one scheduled.
     	// Lastly, we need to schedule the next arrival.
-    	numArrivals[fromLane]++;
+    	numArrivals[e.fromLane]++;
 
         // Choosing queue policy with the passed boolean variable:
         // true=random, false=shortest
-        int toLane = RandTool.unform(0,3);
-    	queues[toLane].add(new Car (clock, toLane));
+        
+    	//queues[e.direction].add(new Car (clock));
 
-    	if (queues[toLane].size() == 1) {
-    	    // This is the only customer => schedule a departure.
-    	    scheduleDeparture(k);
-    	}
+    	// if (queues[].size() == 1) {
+    	//     // This is the only customer => schedule a departure.
+    	//     scheduleDeparture(k);
+    	// }
     	scheduleArrival();
-    }
-
-    int chooseQueue(boolean isRandom) {
-        int q = 0;
-        if (isRandom) {
-        	// Uniformly pick a random queue 
-            q = RandTool.uniform (0,k-1);
-        } else {
-        	// Shortest queue
-            int lineSize = queues[0].size();
-            for(int i = 0; i < k; i++) {
-                if(queues[i].size() < lineSize)
-                {
-                    lineSize = queues[i].size();
-                    q = i;
-                }
-            }
-        }
-    	return q;
     }
 
     void handleDeparture(Event e) {
@@ -125,29 +108,32 @@ public class AIMC extends JPanel {
     	// that particular queue, then schedule the next departure
     	// if that queue has waiting customers.
     	numDepartures++;
-    	int k = e.whichQueue;
-    	Customer c = queues[k].removeFirst();
+    	int direction = e.direction;
+        int fromLane = e.fromLane;
+        // TO DO BASED ON fromLane and direction
+        allowTraffic();
+
+    	//Car c = queues[direction].removeFirst();
     	totalSystemTime += clock - c.entryTime;
 
-        // Assignment 4: What did you do to assess the accuracy of your estimates?
-        // if (numDepartures == 1) {
-        //     expFirstTrial = totalSystemTime;
-        //     System.out.println("--------------------1st departure: " + expFirstTrial);
-        // }
 
-    	if (queues[k].size() > 0) {
+
+
+    	if (queues[direction].size() > 0) {
     	    // There's a waiting customer => schedule departure.
-    	    Customer waitingCust = queues[k].get(0);
+    	    Car waitingCar = queues[direction].get(0);
     	    // Note where we are collecting stats for waiting time.
-    	    totalWaitTime += clock - waitingCust.entryTime;
-    	    scheduleDeparture(k);
+    	    totalWaitTime += clock - waitingCar.entryTime;
+    	    scheduleDeparture(direction);
     	}
     }
 
     void scheduleArrival() {
-    	// The next arrival occurs when we add an interrarrival to the the current time.
-    	double nextArrivalTime = clock + randomInterarrivalTime();
-    	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, chooseQueue(false)));
+            int fromLane = RandTool.uniform(0,4);
+        	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
+            int direction = RandTool.unform(1,4);
+        	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, direction));
+            carList[fromLane].add(new Car(nextArrivalTime));
     }    
 
     void scheduleDeparture(int i) {
@@ -155,8 +141,8 @@ public class AIMC extends JPanel {
         eventList.add(new Event(nextDepartureTime, Event.DEPARTURE, i));
     }
 
-    double randomInterarrivalTime() {
-        return exponential(arrivalRate);
+    double randomInterarrivalTime(int i) {
+        return exponential(arrivalRate[i]);
     }
 
     // TO DO: change to fixed based on direction
@@ -316,18 +302,11 @@ public class AIMC extends JPanel {
     } 
 }
 
-class Car {	
-    public static int LEFT = 3;
-    public static int STRAIGHT = 2;
-    public static int RIGHT = 1;
-
+class Car {
     double arrivalTime;
-    int direction;
-    int toLane = -1;               // Which lane, for a departure.
-    public Car (double entryTime, int toLane)
+    public Car (double arrivalTime)
     {
         this.arrivalTime = arrivalTime;
-        this.toLane = toLane;
     }
 }
 
@@ -335,13 +314,21 @@ class Event implements Comparable {
     public static int ARRIVAL = 1;
     public static int DEPARTURE = 2;
 
+    public static int LEFT = 2;
+    public static int STRAIGHT = 1;
+    public static int RIGHT = 0;
+
     int type = -1;                     // Arrival or departure.
     double eventTime;                  // When it occurs.
+    int fromLane = -1;
+    int direction = -1;
 
-    public Event(double eventTime, int type)
+    public Event(double eventTime, int type, int fromLane, int direction)
     {
     	this.eventTime = eventTime;
     	this.type = type;
+        this.fromLane = fromLane;
+        this.direction = direction;
     }
 
     public int compareTo(Object obj)
