@@ -108,10 +108,10 @@ public class AIMC extends JPanel {
     	// that particular queue, then schedule the next departure
     	// if that queue has waiting customers.
     	numDepartures++;
-    	int direction = e.direction;
-        int fromLane = e.fromLane;
+    	
+
         // TO DO BASED ON fromLane and direction
-        allowTraffic();
+        allowTraffic(Event e);
 
     	//Car c = queues[direction].removeFirst();
     	totalSystemTime += clock - c.entryTime;
@@ -128,12 +128,60 @@ public class AIMC extends JPanel {
     	}
     }
 
+    void allowTraffic(Event e) {
+    	int direction = e.direction;
+        int fromLane = e.fromLane;
+
+        PriorityQueue<Car> allowedCars = new PriorityQueue<Car>();
+        for (int i = 0; i < k; i++) {
+        	if (i != fromLane) {
+        		allowedCars.add(carList[i].peek());
+        	}
+        }
+
+        switch (fromLane) {
+        	case 0:
+        		if (direction == Event.RIGHT) {
+        			for (int i = 1; i < k; i++) {
+        				int d = carList[i].peek().direction;
+
+        				if (d == Event.RIGHT) {
+
+        					// 1st check, all can go RIGHT
+        					allow(i);
+        				} else if (d == Event.STRAIGHT) {
+        					if (i == 2 || i == 3) {
+        						allow(i);
+        					}
+        				} else {
+        					// LEFT
+        					if (i == 3) {
+        						allow(i);
+        					}
+        				}
+        			}
+        		}
+
+        	case 1:	
+
+        	case 2:	
+
+        	case 3: 
+
+        	default: 
+        }
+    }
+
+    boolean isSameDirection(int i, int j) {
+    	return (i == j);
+    }
+
     void scheduleArrival() {
             int fromLane = RandTool.uniform(0,4);
         	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
             int direction = RandTool.unform(1,4);
         	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, direction));
-            carList[fromLane].add(new Car(nextArrivalTime));
+            carList[fromLane].add(new Car(nextArrivalTime, direction));
     }    
 
     void scheduleDeparture(int i) {
@@ -302,11 +350,36 @@ public class AIMC extends JPanel {
     } 
 }
 
-class Car {
+class Car implements Comparable {
+    public static int LEFT = 2;
+    public static int STRAIGHT = 1;
+    public static int RIGHT = 0;
+
     double arrivalTime;
-    public Car (double arrivalTime)
+    int direction = -1;
+    public Car (double arrivalTime, int direction)
     {
         this.arrivalTime = arrivalTime;
+        this.direction = direction;
+    }
+
+    public int compareTo(Object obj)
+    {
+        Event e = (Event) obj;
+        if (eventTime < e.eventTime) {
+            return -1;
+        }
+        else if (eventTime > e.eventTime) {
+            return 1;
+        }
+        else {
+            return 0;
+        }
+    }
+
+    public boolean equals(Object obj)
+    {
+        return (compareTo(obj) == 0);
     }
 }
 
