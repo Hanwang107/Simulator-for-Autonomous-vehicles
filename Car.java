@@ -22,10 +22,11 @@ class Car implements Comparable {
 
     double arrivalTime;
     int direction = -1;
-    public Car (double arrivalTime, int direction)
-    {
+    int fromLane = -1;
+    public Car (double arrivalTime, int direction, int fromLane) {
         this.arrivalTime = arrivalTime;
         this.direction = direction;
+        this.fromLane = fromLane;
     }
 
     public int compareTo(Object obj)
