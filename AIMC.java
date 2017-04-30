@@ -35,11 +35,18 @@ public class AIMC {
     private PriorityQueue<Car> carList;
     private double clock;
 
+
     // Statistics.
     int numArrivals = 0;                    // How many arrived?
     int numDepartures;                      // How many left?
     double totalWaitTime, avgWaitTime;      // For time spent in queue
     double totalSystemTime, avgSystemTime;  // For time spent in system
+
+
+    //Event direction
+    double left = Event.LEFT;
+    double right = Event.RIGHT;
+    double straight = Event.STRAIGHT;
 
     void reset() {
     	eventList = new PriorityQueue<Event>();
@@ -132,48 +139,93 @@ public class AIMC {
     	}
     }
 
+
+    //Simultaneous going
     void allowTraffic(Event e) {
     	int direction = e.direction;
         int fromLane = e.fromLane;
 
+        // allow queues for car
         PriorityQueue<Car> allowedCars = new PriorityQueue<Car>();
+        //Get the first three cars from other lanes.
         for (int i = 0; i < k; i++) {
         	if (i != fromLane) {
         		allowedCars.add(carList[i].peek());
         	}
         }
 
-        switch (fromLane) {
-        	case 0:
-        		if (direction == Event.RIGHT) {
-        			for (int i = 1; i < k; i++) {
-        				int d = carList[i].peek().direction;
+        Interator it = allowedCars.interator();
+        while (it.hasNext()) {
+            Car car = it.next();
 
-        				if (d == Event.RIGHT) {
+            // if the car from the next lane of cloclwise, only cars which turn right allows
+            if (fromLane == 3 && car.fromLane == 0) {
+                if (car.direction == right) {
+                    scheduleDeparture(e, car);
+                    continue;
+                }
+            }
+            if (car.fromLane == (fromLane + 1) && car.direction == right) {
+                scheduleDeparture(e, car);
+                continue;                   
+            } 
 
-        					// 1st check, all can go RIGHT
-        					allow(i);
-        				} else if (d == Event.STRAIGHT) {
-        					if (i == 2 || i == 3) {
-        						allow(i);
-        					}
-        				} else {
-        					// LEFT
-        					if (i == 3) {
-        						allow(i);
-        					}
-        				}
-        			}
-        		}
+            // the situation that the car in front of the main car
+            if (Math.abs(car.fromLane - fromLane) == 2) {
+                if (fromLane != left && car.direction != left) {
+                    scheduleDeparture(e, car);
+                    continue; 
+                }
+            }
 
-        	case 1:	
+            // if the car from the next lane of countercloclwise          
+            if (fromLane == 0 && car.fromLane == 3) {
+                if (direction == right && car.direction == right) {
+                    scheduleDeparture(e, car);
+                    continue;                     
+                }
+            }
 
-        	case 2:	
-
-        	case 3: 
-
-        	default: 
+            if (car.fromLane == (fromLane - 1)) {
+                if (direction == right && car.direction == right) {
+                    scheduleDeparture(e, car);
+                    continue;                     
+                }
+            }
         }
+
+        // switch (fromLane) {
+        //     case 0:
+        //         if (direction == Event.RIGHT) {
+        //             for (int i = 1; i < k; i++) {
+        //                 int d = carList[i].peek().direction;
+
+        //                 if (d == Event.RIGHT) {
+
+        //                     // 1st check, all can go RIGHT
+        //                     allow(i);
+        //                 } else if (d == Event.STRAIGHT) {
+        //                     if (i == 2 || i == 3) {
+        //                         allow(i);
+        //                     }
+        //                 } else {
+        //                     // LEFT
+        //                     if (i == 3) {
+        //                         allow(i);
+        //                     }
+        //                 }
+        //             }
+        //         }
+
+        //     case 1: 
+
+        //     case 2: 
+
+        //     case 3: 
+
+        //     default: 
+        // }
+
     }
 
     boolean isSameDirection(int i, int j) {
@@ -185,12 +237,18 @@ public class AIMC {
         	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
             int direction = RandTool.unform(1,4);
         	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, direction));
-            carList[fromLane].add(new Car(nextArrivalTime, direction));
+            carList[fromLane].add(new Car(nextArrivalTime, direction, fromLane));
     }    
 
     void scheduleDeparture(int i) {
         double nextDepartureTime = clock + randomServiceTime();
         eventList.add(new Event(nextDepartureTime, Event.DEPARTURE, i));
+    }
+
+    //Schedule departure for cars from other lanes simultaneously
+    private void scheduleDeparture(Event e, Car car) {
+        double nextDepartureTime = e.eventTime;
+        eventList.add(new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane));
     }
 
     double randomInterarrivalTime(int i) {
