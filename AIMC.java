@@ -12,7 +12,7 @@ import javax.swing.event.*;
 *  Description: Queue controller and algorithms for AIMC
 */
 
-
+@SuppressWarnings("unchecked")
 public class AIMC {
 	// Animation and drawing
     Thread currentThread;  
@@ -37,7 +37,7 @@ public class AIMC {
 
 
     // Statistics.
-    int numArrivals = 0;                    // How many arrived?
+    int numArrivals;                    // How many arrived?
     int numDepartures;                      // How many left?
     double totalWaitTime, avgWaitTime;      // For time spent in queue
     double totalSystemTime, avgSystemTime;  // For time spent in system
@@ -52,10 +52,9 @@ public class AIMC {
 
     void reset() {
     	eventList = new PriorityQueue<Event>();
-        carList = new PriorityQueue<Car>();
-    	queues = new LinkedList [k];
+        //carList = new PriorityQueue<Car>();
         for (int i = 0; i < k; i++) {
-            queues[i] = new LinkedList<Car>();
+            carList[i] = new PriorityQueue<Car>();
         }
 
 	   // Initialize stats variables.
@@ -102,7 +101,12 @@ public class AIMC {
     	// For an arrival, we need to put the car in a queue, and
     	// schedule a departure for that queue if there isn't one scheduled.
     	// Lastly, we need to schedule the next arrival.
-    	numArrivals[e.fromLane]++;
+    	numArrivals++;
+        
+        scheduleDeparture(e.fromLane);  
+
+        // TO check if any car can be allowed simultaneous
+        allowTraffic(e);
 
         // Choosing queue policy with the passed boolean variable:
         // true=random, false=shortest
@@ -113,6 +117,7 @@ public class AIMC {
     	//     // This is the only customer => schedule a departure.
     	//     scheduleDeparture(k);
     	// }
+
     	scheduleArrival();
     }
 
@@ -122,23 +127,23 @@ public class AIMC {
     	// if that queue has waiting customers.
     	numDepartures++;
     	
+        //remove it from carlist
+        Car car = carList[e.fromLane].poll();
 
-        // TO DO BASED ON fromLane and direction
-        allowTraffic(Event e);
 
     	//Car c = queues[direction].removeFirst();
-    	totalSystemTime += clock - c.entryTime;
+    	totalSystemTime += clock - car.arrivalTime;
 
 
+    	// if (queues[direction].size() > 0) {
+    	//     // There's a waiting customer => schedule departure.
+    	//     Car waitingCar = queues[direction].get(0);
+    	//     // Note where we are collecting stats for waiting time.
+    	//     totalWaitTime += clock - waitingCar.entryTime;
+    	//     scheduleDeparture(direction);
+    	// }
 
 
-    	if (queues[direction].size() > 0) {
-    	    // There's a waiting customer => schedule departure.
-    	    Car waitingCar = queues[direction].get(0);
-    	    // Note where we are collecting stats for waiting time.
-    	    totalWaitTime += clock - waitingCar.entryTime;
-    	    scheduleDeparture(direction);
-    	}
     }
 
 
@@ -156,16 +161,16 @@ public class AIMC {
         	}
         }
 
-        Interator it = allowedCars.interator();
+        Iterator it = allowedCars.iterator();
         while (it.hasNext()) {
-            Car car = it.next();
+            Car car = (Car) it.next();
 
             // Left car
             if (car.fromLane == (fromLane + 1) % 4 && car.direction == right) {
                 scheduleDeparture(e, car);
-                Car car = carList[fromLane].poll();
-                //Event event = 
-                //eventList.remove(Event event));
+                //Remove this car from carlist and eventlist
+                Car carToBeRemoved = carList[fromLane].poll();
+                eventList.remove(new Event(carToBeRemoved.arrivalTime, -1, carToBeRemoved.fromLane, carToBeRemoved.carID));
                 continue;                   
             } 
 
@@ -173,7 +178,9 @@ public class AIMC {
             if (Math.abs(car.fromLane - fromLane) == 2) {
                 if (fromLane != left && car.direction != left) {
                     scheduleDeparture(e, car);
-                    carList[car.fromLane]
+                    //Remove this car from carlist and eventlist
+                    Car carToBeRemoved= carList[fromLane].poll();
+                    eventList.remove(new Event(carToBeRemoved.arrivalTime, -1, carToBeRemoved.fromLane, carToBeRemoved.carID));
                     continue; 
                 }
             }
@@ -182,46 +189,16 @@ public class AIMC {
             if (fromLane == (car.fromLane + 1) % 4) {
                 if (direction == right && car.direction == right) {
                     scheduleDeparture(e, car);
+                    //Remove this car from carlist and eventlist
+                    Car carToBeRemoved= carList[fromLane].poll();
+                    eventList.remove(new Event(carToBeRemoved.arrivalTime, -1, carToBeRemoved.fromLane, carToBeRemoved.carID));
                     continue;                     
                 }
             }
         }
-
-        // switch (fromLane) {
-        //     case 0:
-        //         if (direction == Event.RIGHT) {
-        //             for (int i = 1; i < k; i++) {
-        //                 int d = carList[i].peek().direction;
-
-        //                 if (d == Event.RIGHT) {
-
-        //                     // 1st check, all can go RIGHT
-        //                     allow(i);
-        //                 } else if (d == Event.STRAIGHT) {
-        //                     if (i == 2 || i == 3) {
-        //                         allow(i);
-        //                     }
-        //                 } else {
-        //                     // LEFT
-        //                     if (i == 3) {
-        //                         allow(i);
-        //                     }
-        //                 }
-        //             }
-        //         }
-
-        //     case 1: 
-
-        //     case 2: 
-
-        //     case 3: 
-
-        //     default: 
-        // }
-
     }
 
-    private void removeCars() {
+    private void removeCars(Car car, Event e) {
         
     }
 
@@ -232,7 +209,7 @@ public class AIMC {
     void scheduleArrival() {
             int fromLane = RandTool.uniform(0,4);
         	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
-            int direction = RandTool.unform(1,4);
+            int direction = RandTool.uniform(1,4);
         	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID));
             carList[fromLane].add(new Car(nextArrivalTime, direction, fromLane, carID));
             carID ++;
@@ -246,12 +223,12 @@ public class AIMC {
 
     //Schedule departure for cars from other lanes simultaneously
     private void scheduleDeparture(Event e, Car car) {
-        double nextDepartureTime = clock + e.eventTime;
+        double nextDepartureTime = clock + randomServiceTime();
         eventList.add(new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane, car.carID));
     }
 
     double randomInterarrivalTime(int i) {
-        return exponential(arrivalRate[i]);
+        return exponential(arrivalRate);
     }
 
     // TO DO: change to fixed based on direction
@@ -261,7 +238,7 @@ public class AIMC {
     }
 
     double exponential(double lambda) {
-        return (1.0 / lambda) * (-Math.log(1.0 - RandTool.uniform()));
+        return (1.0 / lambda) * (- Math.log(1.0 - RandTool.uniform()));
     }
 
     void stats() {

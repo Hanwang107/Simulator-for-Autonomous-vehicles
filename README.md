@@ -1,6 +1,13 @@
 # Simulator-for-Autonomous-vehicles
 Automatic Crossroads Control and Management
 
+
+##AIMC Strategy:
+
+
+##GUI Design:
+
+
 ## Reference
 Alonso, J., Milanés, V., Pérez, J., Onieva, E., González, C., & Pedro, T. D. (2011). Autonomous 
   vehicle control systems for safe crossroads. Transportation Research Part C: Emerging Technologies, 19(6), 1095-1110.     
