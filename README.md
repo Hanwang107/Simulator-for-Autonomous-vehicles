@@ -2,10 +2,9 @@
 Automatic Crossroads Control and Management
 
 
-##AIMC Strategy:
+## AIMC Strategy
 
-
-##GUI Design:
+## GUI Design
 
 
 ## Reference
