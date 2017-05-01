@@ -19,7 +19,19 @@ public class AIMCGUI extends JPanel{
     private int roadLength = 200;
     private int offset = 60;
 
-	//private AIMC aimc;
+    private int carLength = 40;
+    private int carWidth = 30;
+    private int lGap = 5;
+    private int wGap = 15; //(roadWidth - carWidth) / 2;
+
+    // Animation and drawing.
+    boolean doAnimation = true;
+    Thread currentThread;  
+    boolean isPaused = false;
+    int sleepTime = 50;
+    //DecimalFormat df = new DecimalFormat ("##.####");
+
+	private AIMC aimc = new AIMC();
 
 
 	public AIMCGUI() {
@@ -92,6 +104,32 @@ public class AIMCGUI extends JPanel{
   		g.setColor (Color.red);
     	g2.drawRect(offset + roadLength, D.height / 2 - roadWidth, 2 * roadWidth, 2 * roadWidth);
 
+        // Draw left cars (fromLane: 0)
+        for (int i = 1; i < 5; i++) {
+            g.setColor(Color.green);
+            g2.fillRect(offset + roadLength - i * (lGap + carLength), D.height / 2 + wGap, carLength, carWidth);
+        }
+
+        // Draw top cars (fromLane: 1)
+        for (int i = 1; i < 5; i++) {
+            g.setColor(Color.magenta);
+            g2.fillRect(offset + roadLength +wGap, D.height / 2 - roadWidth - i * (lGap + carLength), carWidth, carLength);          
+        }
+
+
+        // Draw right cars (fromLane: 2)
+        for (int i = 1; i < 5; i++) {
+            g.setColor(Color.orange); 
+            g2.fillRect(offset + roadLength + 2 * roadWidth + i * lGap +  (i - 1) * carLength, D.height / 2 - carWidth - wGap, carLength, carWidth);              
+        }
+  
+
+        // Draw bottom cars (fromLane: 3)
+        for (int i = 1; i < 5; i++) {
+            g.setColor(Color.cyan);
+            g2.fillRect(offset + roadLength + roadWidth + wGap, D.height / 2 + roadWidth + i * lGap + (i - 1) * carLength, carWidth, carLength);           
+        }      
+
 	}    
 
     JPanel makeBottomPanel ()
@@ -103,7 +141,7 @@ public class AIMCGUI extends JPanel{
 			new ActionListener () {
 			   public void actionPerformed (ActionEvent a)
 			   {
-			       //aimc.reset ();
+			       aimc.reset ();
 			   }
 			});
 		panel.add (resetB);
@@ -114,7 +152,7 @@ public class AIMCGUI extends JPanel{
 			new ActionListener () {
 			   public void actionPerformed (ActionEvent a)
 			   {
-			       //aimc.nextStep ();
+			       aimc.nextStep ();
 			   }
 			});
 		panel.add (nextB);
@@ -126,7 +164,7 @@ public class AIMCGUI extends JPanel{
 			new ActionListener () {
 			   public void actionPerformed (ActionEvent a)
 			   {
-			       //aimc.go ();
+			       go ();
 			   }
 			});
 		panel.add (goB);
@@ -137,7 +175,7 @@ public class AIMCGUI extends JPanel{
 			new ActionListener () {
 			   public void actionPerformed (ActionEvent a)
 			   {
-			       //aimc.pause ();
+			       pause ();
 			   }
 			});
 		panel.add (pauseB);
@@ -154,7 +192,59 @@ public class AIMCGUI extends JPanel{
 		panel.add (quitB);
         
         return panel;
-    }   
+    } 
+
+
+    ///////////////////////////////////////////////////////////////////////
+    // Animation
+    void go ()
+    {
+        // Fire off a thread so that Swing's thread isn't used.
+        if (isPaused) {
+            isPaused = false;
+            return;
+        }
+        if (currentThread != null) {
+            currentThread.interrupt ();
+            currentThread = null;
+        }
+        
+        currentThread = new Thread () {
+                public void run () 
+                {
+                    simulate ();
+                }
+                
+        };
+        currentThread.start();
+    }
+
+    void pause () 
+    {
+        isPaused = true;
+    }
+    
+
+    void simulate ()
+    {
+        while (true) {
+
+            if (! isPaused) {
+                aimc.nextStep ();
+            }
+            
+        this.repaint();
+
+            try {
+                Thread.sleep (sleepTime);
+            }
+            catch (InterruptedException e){
+                break;
+            }
+        } 
+
+        this.repaint ();
+    }
 
 
 	public static void main (String[] argv) {
