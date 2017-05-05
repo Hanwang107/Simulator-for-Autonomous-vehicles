@@ -31,12 +31,14 @@ public class AIMCGUI extends JPanel{
     int sleepTime = 50;
     //DecimalFormat df = new DecimalFormat ("##.####");
 
-	private AIMC aimc;
+    PriorityQueue<Car>[] carList;
 
+	private AIMC aimc;
 
 
 	public AIMCGUI() {
         aimc = new AIMC();
+        carList = aimc.getCarList();
 		makeFrame();
 	}
 
@@ -107,33 +109,34 @@ public class AIMCGUI extends JPanel{
     	g2.drawRect(offset + roadLength, D.height / 2 - roadWidth, 2 * roadWidth, 2 * roadWidth);
 
 
-        if (aimc.carList[0].size() != 0 || aimc.carList[0] != null) {
+        // Draw Cars
+        if (carList[0].size() != 0 || carList[0] != null) {
              // Draw left cars (fromLane: 0)
-            for (int i = 1; i <= aimc.carList[0].size(); i++) {
+            for (int i = 1; i <= carList[0].size(); i++) {
                 g.setColor(Color.green);
                 g2.fillRect(offset + roadLength - i * (lGap + carLength), D.height / 2 + wGap, carLength, carWidth);
             }
         }
 
-        if (aimc.carList[1].size() != 0 || aimc.carList[1] != null) {
+        if (carList[1].size() != 0 || carList[1] != null) {
             // Draw top cars (fromLane: 1)
-            for (int i = 1; i <= aimc.carList[1].size(); i++) {
+            for (int i = 1; i <= carList[1].size(); i++) {
                 g.setColor(Color.magenta);
                 g2.fillRect(offset + roadLength +wGap, D.height / 2 - roadWidth - i * (lGap + carLength), carWidth, carLength);          
             }            
         }
 
-        if (aimc.carList[2].size() != 0 || aimc.carList[2] != null) {
+        if (carList[2].size() != 0 || carList[2] != null) {
             // Draw right cars (fromLane: 2)
-            for (int i = 1; i <= aimc.carList[2].size(); i++) {
+            for (int i = 1; i <= carList[2].size(); i++) {
                 g.setColor(Color.orange); 
                 g2.fillRect(offset + roadLength + 2 * roadWidth + i * lGap +  (i - 1) * carLength, D.height / 2 - carWidth - wGap, carLength, carWidth);              
             }            
         }
 
-        if (aimc.carList[3].size() != 0 || aimc.carList[3] != null) {
+        if (carList[3].size() != 0 || carList[3] != null) {
              // Draw bottom cars (fromLane: 3)
-            for (int i = 1; i <= aimc.carList[3].size(); i++) {
+            for (int i = 1; i <= carList[3].size(); i++) {
                 g.setColor(Color.cyan);
                 g2.fillRect(offset + roadLength + roadWidth + wGap, D.height / 2 + roadWidth + i * lGap + (i - 1) * carLength, carWidth, carLength);           
             }            
