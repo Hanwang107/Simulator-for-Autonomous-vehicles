@@ -26,12 +26,13 @@ class Event implements Comparable {
     int fromLane = -1;
     int direction = -1;
     int carID = -1;
-    public Event(double eventTime, int type, int fromLane, int carID)
+    public Event(double eventTime, int type, int fromLane, int carID, int direction)
     {
     	this.eventTime = eventTime;
     	this.type = type;
         this.fromLane = fromLane;
         this.carID = carID;
+        this.direction = direction;
     }
 
     public int compareTo(Object obj)

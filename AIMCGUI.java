@@ -25,16 +25,18 @@ public class AIMCGUI extends JPanel{
     private int wGap = 15; //(roadWidth - carWidth) / 2;
 
     // Animation and drawing.
-    boolean doAnimation = true;
+    boolean doAnimation = false;
     Thread currentThread;  
     boolean isPaused = false;
     int sleepTime = 50;
     //DecimalFormat df = new DecimalFormat ("##.####");
 
-	private AIMC aimc = new AIMC();
+	private AIMC aimc;
+
 
 
 	public AIMCGUI() {
+        aimc = new AIMC();
 		makeFrame();
 	}
 
@@ -104,32 +106,38 @@ public class AIMCGUI extends JPanel{
   		g.setColor (Color.red);
     	g2.drawRect(offset + roadLength, D.height / 2 - roadWidth, 2 * roadWidth, 2 * roadWidth);
 
-        // Draw left cars (fromLane: 0)
-        for (int i = 1; i < 5; i++) {
-            g.setColor(Color.green);
-            g2.fillRect(offset + roadLength - i * (lGap + carLength), D.height / 2 + wGap, carLength, carWidth);
+
+        if (aimc.carList[0].size() != 0 || aimc.carList[0] != null) {
+             // Draw left cars (fromLane: 0)
+            for (int i = 1; i <= aimc.carList[0].size(); i++) {
+                g.setColor(Color.green);
+                g2.fillRect(offset + roadLength - i * (lGap + carLength), D.height / 2 + wGap, carLength, carWidth);
+            }
         }
 
-        // Draw top cars (fromLane: 1)
-        for (int i = 1; i < 5; i++) {
-            g.setColor(Color.magenta);
-            g2.fillRect(offset + roadLength +wGap, D.height / 2 - roadWidth - i * (lGap + carLength), carWidth, carLength);          
+        if (aimc.carList[1].size() != 0 || aimc.carList[1] != null) {
+            // Draw top cars (fromLane: 1)
+            for (int i = 1; i <= aimc.carList[1].size(); i++) {
+                g.setColor(Color.magenta);
+                g2.fillRect(offset + roadLength +wGap, D.height / 2 - roadWidth - i * (lGap + carLength), carWidth, carLength);          
+            }            
         }
 
-
-        // Draw right cars (fromLane: 2)
-        for (int i = 1; i < 5; i++) {
-            g.setColor(Color.orange); 
-            g2.fillRect(offset + roadLength + 2 * roadWidth + i * lGap +  (i - 1) * carLength, D.height / 2 - carWidth - wGap, carLength, carWidth);              
+        if (aimc.carList[2].size() != 0 || aimc.carList[2] != null) {
+            // Draw right cars (fromLane: 2)
+            for (int i = 1; i <= aimc.carList[2].size(); i++) {
+                g.setColor(Color.orange); 
+                g2.fillRect(offset + roadLength + 2 * roadWidth + i * lGap +  (i - 1) * carLength, D.height / 2 - carWidth - wGap, carLength, carWidth);              
+            }            
         }
-  
 
-        // Draw bottom cars (fromLane: 3)
-        for (int i = 1; i < 5; i++) {
-            g.setColor(Color.cyan);
-            g2.fillRect(offset + roadLength + roadWidth + wGap, D.height / 2 + roadWidth + i * lGap + (i - 1) * carLength, carWidth, carLength);           
-        }      
-
+        if (aimc.carList[3].size() != 0 || aimc.carList[3] != null) {
+             // Draw bottom cars (fromLane: 3)
+            for (int i = 1; i <= aimc.carList[3].size(); i++) {
+                g.setColor(Color.cyan);
+                g2.fillRect(offset + roadLength + roadWidth + wGap, D.height / 2 + roadWidth + i * lGap + (i - 1) * carLength, carWidth, carLength);           
+            }            
+        }
 	}    
 
     JPanel makeBottomPanel ()
@@ -141,7 +149,7 @@ public class AIMCGUI extends JPanel{
 			new ActionListener () {
 			   public void actionPerformed (ActionEvent a)
 			   {
-			       aimc.reset ();
+			       reset ();
 			   }
 			});
 		panel.add (resetB);
@@ -152,7 +160,7 @@ public class AIMCGUI extends JPanel{
 			new ActionListener () {
 			   public void actionPerformed (ActionEvent a)
 			   {
-			       aimc.nextStep ();
+			       nextStep ();
 			   }
 			});
 		panel.add (nextB);
@@ -197,6 +205,7 @@ public class AIMCGUI extends JPanel{
 
     ///////////////////////////////////////////////////////////////////////
     // Animation
+
     void go ()
     {
         // Fire off a thread so that Swing's thread isn't used.
@@ -211,7 +220,8 @@ public class AIMCGUI extends JPanel{
         
         currentThread = new Thread () {
                 public void run () 
-                {
+                {   
+                    //doAnimation = true;
                     simulate ();
                 }
                 
@@ -230,7 +240,8 @@ public class AIMCGUI extends JPanel{
         while (true) {
 
             if (! isPaused) {
-                aimc.nextStep ();
+                //aimc.nextStep ();
+                nextStep();
             }
             
         this.repaint();
@@ -246,6 +257,14 @@ public class AIMCGUI extends JPanel{
         this.repaint ();
     }
 
+    void nextStep() {
+        aimc.nextStep();
+        this.repaint();
+    }
+
+    void reset() {
+        aimc.reset();
+    }
 
 	public static void main (String[] argv) {
         new AIMCGUI();

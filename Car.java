@@ -33,11 +33,11 @@ class Car implements Comparable {
 
     public int compareTo(Object obj)
     {
-        Event e = (Event) obj;
-        if (arrivalTime < e.eventTime) {
+        Car car = (Car) obj;
+        if (arrivalTime < car.arrivalTime) {
             return -1;
         }
-        else if (arrivalTime > e.eventTime) {
+        else if (arrivalTime > car.arrivalTime) {
             return 1;
         }
         else {
