@@ -28,10 +28,11 @@ public class AIMCGUI extends JPanel{
     boolean doAnimation = false;
     Thread currentThread;  
     boolean isPaused = false;
-    int sleepTime = 50;
+    int sleepTime = 500;
     //DecimalFormat df = new DecimalFormat ("##.####");
 
     PriorityQueue<Car>[] carList;
+
 
 	private AIMC aimc;
 
@@ -111,34 +112,66 @@ public class AIMCGUI extends JPanel{
 
         // Draw Cars
         if (carList[0].size() != 0 || carList[0] != null) {
+            Object[] cars = carList[0].toArray();
              // Draw left cars (fromLane: 0)
-            for (int i = 1; i <= carList[0].size(); i++) {
+            for (int i = 0; i < cars.length; i++) {
                 g.setColor(Color.green);
-                g2.fillRect(offset + roadLength - i * (lGap + carLength), D.height / 2 + wGap, carLength, carWidth);
+                int x = offset + roadLength - (i + 1) * (lGap + carLength);
+                int y = D.height / 2 + wGap;
+                g2.fillRect(x, y, carLength, carWidth);
+
+                g.setColor(Color.black);
+                Car car = (Car) cars[i];
+                String carId = "" + car.carID;
+                g2.drawString(carId, x, y + carWidth / 2);
             }
         }
 
         if (carList[1].size() != 0 || carList[1] != null) {
+            Object[] cars = carList[1].toArray();
             // Draw top cars (fromLane: 1)
-            for (int i = 1; i <= carList[1].size(); i++) {
+            for (int i = 0; i < cars.length; i++) {
                 g.setColor(Color.magenta);
-                g2.fillRect(offset + roadLength +wGap, D.height / 2 - roadWidth - i * (lGap + carLength), carWidth, carLength);          
+                int x = offset + roadLength +wGap;
+                int y = D.height / 2 - roadWidth - (i + 1) * (lGap + carLength);
+                g2.fillRect(x, y, carWidth, carLength);   
+
+                g.setColor(Color.black);
+                Car car = (Car) cars[i];
+                String carId = "" + car.carID;
+                g2.drawString(carId, x, y + carLength / 2);     
             }            
         }
 
         if (carList[2].size() != 0 || carList[2] != null) {
+            Object[] cars = carList[2].toArray();
             // Draw right cars (fromLane: 2)
-            for (int i = 1; i <= carList[2].size(); i++) {
+            for (int i = 0; i < cars.length; i++) {
                 g.setColor(Color.orange); 
-                g2.fillRect(offset + roadLength + 2 * roadWidth + i * lGap +  (i - 1) * carLength, D.height / 2 - carWidth - wGap, carLength, carWidth);              
+                int x = offset + roadLength + 2 * roadWidth + (i + 1) * lGap +  i * carLength;
+                int y = D.height / 2 - carWidth - wGap;
+                g2.fillRect(x, y, carLength, carWidth);    
+
+                g.setColor(Color.black);
+                Car car = (Car) cars[i];
+                String carId = "" + car.carID;
+                g2.drawString(carId, x, y + carWidth / 2);       
             }            
         }
 
         if (carList[3].size() != 0 || carList[3] != null) {
+            Object[] cars = carList[3].toArray();
              // Draw bottom cars (fromLane: 3)
-            for (int i = 1; i <= carList[3].size(); i++) {
+            for (int i = 0; i < cars.length; i++) {
                 g.setColor(Color.cyan);
-                g2.fillRect(offset + roadLength + roadWidth + wGap, D.height / 2 + roadWidth + i * lGap + (i - 1) * carLength, carWidth, carLength);           
+                int x = offset + roadLength + roadWidth + wGap;
+                int y = D.height / 2 + roadWidth + (i + 1) * lGap + i * carLength;
+                g2.fillRect(x, y, carWidth, carLength); 
+
+                g.setColor(Color.black);
+                Car car = (Car) cars[i];
+                String carId = "" + car.carID;
+                g2.drawString(carId, x, y + carLength / 2);           
             }            
         }
 	}    
@@ -146,7 +179,6 @@ public class AIMCGUI extends JPanel{
     JPanel makeBottomPanel ()
     {
         JPanel panel = new JPanel ();
-        
 		JButton resetB = new JButton ("Reset");
 		resetB.addActionListener (
 			new ActionListener () {
@@ -266,7 +298,9 @@ public class AIMCGUI extends JPanel{
     }
 
     void reset() {
+        pause();
         aimc.reset();
+        this.repaint();
     }
 
 	public static void main (String[] argv) {

@@ -48,7 +48,7 @@ public class AIMC {
     double right = Event.RIGHT;
     double straight = Event.STRAIGHT;
 
-    int carID;
+    int carID = 1;
 
     public AIMC() {
         reset();
@@ -62,7 +62,7 @@ public class AIMC {
         }
 
 	   // Initialize stats variables.
-        carID = 0;
+        carID = 1;
         numArrivals = 0;
     	numDepartures = 0;
     	avgWaitTime = totalWaitTime = 0;
@@ -87,6 +87,7 @@ public class AIMC {
 
     	// Handle each type separately.
     	if (e.type == Event.ARRIVAL) {
+
     	    handleArrival(e);
     	}
     	else if (e.type == Event.DEPARTURE) {
@@ -102,7 +103,6 @@ public class AIMC {
     	// }
     }
 
-    // STILL IN PROGRESS
     void handleArrival(Event e) {
     	// For an arrival, we need to put the car in a queue, and
     	// schedule a departure for that queue if there isn't one scheduled.
@@ -114,6 +114,8 @@ public class AIMC {
 
 
     	numArrivals++;
+
+        carList[e.fromLane].add(new Car(e.eventTime, e.direction, e.fromLane, e.carID));
       
         scheduleDeparture(e);  
 
@@ -198,6 +200,8 @@ public class AIMC {
 
             // Left car
             if (car.fromLane == (fromLane + 1) % 4 && car.direction == right) {
+                removeDuplicateEvent(car.carID, Event.DEPARTURE);
+
                 scheduleDeparture(e, car);
                 //System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);
                 //Remove this car from carlist and eventlist
@@ -210,6 +214,8 @@ public class AIMC {
             // opposite car
             if (Math.abs(car.fromLane - fromLane) == 2) {
                 if (fromLane != left && car.direction != left) {
+                    removeDuplicateEvent(car.carID, Event.DEPARTURE);
+
                     scheduleDeparture(e, car);
                     //System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);
                     //Remove this car from carlist and eventlist
@@ -223,6 +229,8 @@ public class AIMC {
             // right car        
             if (fromLane == (car.fromLane + 1) % 4) {
                 if (direction == right && car.direction == right) {
+                    removeDuplicateEvent(car.carID, Event.DEPARTURE);
+
                     scheduleDeparture(e, car);
                     //System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);                    
                     //Remove this car from carlist and eventlist
@@ -244,7 +252,7 @@ public class AIMC {
     	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
         int direction = RandTool.uniform(0,3);
     	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction));
-        carList[fromLane].add(new Car(nextArrivalTime, direction, fromLane, carID));
+        // carList[fromLane].add(new Car(nextArrivalTime, direction, fromLane, carID));
 
         System.out.println("Car "+carID+" will arrival at " + nextArrivalTime);
         carID ++;
@@ -263,7 +271,10 @@ public class AIMC {
 
     //Schedule departure for cars from other lanes simultaneously
     private void scheduleDeparture(Event e, Car car) {
+
+
         double nextDepartureTime = e.eventTime;
+
         eventList.add(new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane, car.carID, car.direction));
 
         //debugging     
@@ -299,9 +310,20 @@ public class AIMC {
         return carList;
     }
 
+    private void removeDuplicateEvent(int carID, int type) {
+        Event event;
+        Iterator it = eventList.iterator();
+        while (it.hasNext()) {
+            event = (Event) it.next();
+            if (event.carID == carID && event.type == type) {
+                it.remove();
+          }
+        }
+    }
 
-    /////////////////////////////////////////////////////////////////////
-    // main
+
+    ///////////////////////////////////////////////////////////////////
+    //main
     public static void main(String[] argv) {
         AIMC aimc = new AIMC();
         while(true) {
