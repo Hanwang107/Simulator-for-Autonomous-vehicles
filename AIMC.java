@@ -70,6 +70,7 @@ public class AIMC {
 
     	// Need to have at least one event in event list.
         clock = 0;
+        scheduleArrival();
     }
 
     void nextStep() {
