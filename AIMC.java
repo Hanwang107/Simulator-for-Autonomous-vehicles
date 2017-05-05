@@ -49,7 +49,7 @@ public class AIMC {
     ////////////////////////////////////////////////////////////////////
     // Simulation methods
     //
-    private void reset() {
+    public void reset() {
     	eventList = new PriorityQueue<Event>();
         //carList = new PriorityQueue<Car>();
         for (int i = 0; i < k; i++) {
@@ -68,7 +68,8 @@ public class AIMC {
         scheduleArrival();
     }
 
-    private void nextStep() {
+    // This method will be called from within GUI
+    public void nextStep() {
 
     	// Event list empty?
     	if (eventList.isEmpty()) {
@@ -288,6 +289,11 @@ public class AIMC {
         }
         avgWaitTime = totalWaitTime / numDepartures;
         avgSystemTime = totalSystemTime / numDepartures;
+    }
+
+    // Getter method for GUI
+    public PriorityQueue<Car>[] getCarList() {
+        return carList;
     }
     //
     // End simulation methods

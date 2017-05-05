@@ -266,7 +266,9 @@ public class AIMCGUI extends JPanel{
     }
 
     void reset() {
+        this.repaint();
         aimc.reset();
+        this.repaint();
     }
 
 	public static void main (String[] argv) {
