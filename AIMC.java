@@ -13,48 +13,43 @@ import javax.swing.event.*;
 */
 
 @SuppressWarnings("unchecked")
-public class AIMC {
-	// Animation and drawing
-    Thread currentThread;  
-    boolean isPaused = false;
-    int sleepTime = 50;
-    
-    LinkedList<Car>[] queues;
+public class AIMC {    
+    private LinkedList<Car>[] queues;
 
     // Number of lanes
-    int k = 4;
+    private int k = 4;
 
-    // Avg time between arrivals = 1.0 (lambda). Can be changed via setter
-    double arrivalRate = 1.0;
-
-    // Assignment 4: Assume the service time is the same at all the servers,
-    // and that each service time is exponentially distributed with mean 1.0
+    // Avg time between arrivals = 1.0 (lambda)
+    private double arrivalRate = 1.0;
     private double serviceRate = 1.0;
 
     private PriorityQueue<Event> eventList;
     private PriorityQueue<Car>[] carList = new PriorityQueue[k];
     private double clock;
 
-
     // Statistics.
-    int numArrivals;                    // How many arrived?
-    int numDepartures;                      // How many left?
-    double totalWaitTime, avgWaitTime;      // For time spent in queue
-    double totalSystemTime, avgSystemTime;  // For time spent in system
+    private int numArrivals;                        // How many arrived?
+    private int numDepartures;                      // How many left?
+    private double totalWaitTime, avgWaitTime;      // For time spent in queue
+    private double totalSystemTime, avgSystemTime;  // For time spent in system
 
+    // Event direction
+    private double left = Event.LEFT;
+    private double right = Event.RIGHT;
+    private double straight = Event.STRAIGHT;
 
-    //Event direction
-    double left = Event.LEFT;
-    double right = Event.RIGHT;
-    double straight = Event.STRAIGHT;
+    // Global car number
+    private int carID = 1;
 
-    int carID;
-
+    // Constructor
     public AIMC() {
         reset();
     }
 
-    void reset() {
+    ////////////////////////////////////////////////////////////////////
+    // Simulation methods
+    //
+    private void reset() {
     	eventList = new PriorityQueue<Event>();
         //carList = new PriorityQueue<Car>();
         for (int i = 0; i < k; i++) {
@@ -62,7 +57,7 @@ public class AIMC {
         }
 
 	   // Initialize stats variables.
-        carID = 0;
+        carID = 1;
         numArrivals = 0;
     	numDepartures = 0;
     	avgWaitTime = totalWaitTime = 0;
@@ -73,7 +68,7 @@ public class AIMC {
         scheduleArrival();
     }
 
-    void nextStep() {
+    private void nextStep() {
 
     	// Event list empty?
     	if (eventList.isEmpty()) {
@@ -103,20 +98,18 @@ public class AIMC {
     }
 
     // STILL IN PROGRESS
-    void handleArrival(Event e) {
+    private void handleArrival(Event e) {
     	// For an arrival, we need to put the car in a queue, and
     	// schedule a departure for that queue if there isn't one scheduled.
     	// Lastly, we need to schedule the next arrival.
-        //Debugging
-        System.out.println("**********************************************************");
-        System.out.println("This is Car" + e.carID + " which is arriving from Lane"+e.fromLane + " and turn to " +e.direction);
-        System.out.println("The size of this lane: " + carList[e.fromLane].size());
 
+    	numArrivals++;      
+        scheduleDeparture(e);
 
-    	numArrivals++;
-      
-        scheduleDeparture(e);  
-
+        //Console Debugging
+        System.out.println("***********************  Handling arrival  *******************************");
+        System.out.println("Car no: " + e.carID + " arriving at " + e.fromLane + ", direction: " + e.direction);
+        //System.out.println("The size of this lane: " + carList[e.fromLane].size());
 
         // TO check if any car can be allowed simultaneous
         //allowTraffic(e);
@@ -131,30 +124,26 @@ public class AIMC {
     	//     scheduleDeparture(k);
     	// }
 
+        // Schedule the next arrival
     	scheduleArrival();
     }
 
-    void handleDeparture(Event e) {
+    private void handleDeparture(Event e) {
     	// For a departure from a queue, remove the customer from 
     	// that particular queue, then schedule the next departure
     	// if that queue has waiting customers.
-    	numDepartures++;
 
+        //Console Debugging
+        System.out.println("***********************  Handling departure  *****************************");
+        System.out.println("Car no: " + e.carID + " departing from " + e.fromLane + ", direction: " + e.direction);
+
+    	numDepartures++;
         totalSystemTime += clock - e.eventTime;
     	
-        //remove it from carlist
+        // Remove it from carlist queue for that specific lane
         Car car = carList[e.fromLane].poll();
 
-
-        //Debugging
-        //System.out.println("****************");
-        System.out.println("This is Car" + e.carID + " which departures from "+e.fromLane + " to " +e.direction);
-
-
     	//Car c = queues[direction].removeFirst();
-
-
-
     	// if (queues[direction].size() > 0) {
     	//     // There's a waiting customer => schedule departure.
     	//     Car waitingCar = queues[direction].get(0);
@@ -162,33 +151,33 @@ public class AIMC {
     	//     totalWaitTime += clock - waitingCar.entryTime;
     	//     scheduleDeparture(direction);
     	// }
-
-
     }
 
-
-    //Simultaneous going strategy
-    void allowTraffic(Event e) {
+    // !!The strategy to allow other lanes simultaneously making sure that the collision does not occur!!
+    private void allowTraffic(Event e) {
     	int direction = e.direction;
         int fromLane = e.fromLane;
 
-        // allow queues for car
+        // Allowed cars queue
         PriorityQueue<Car> allowedCars = new PriorityQueue<Car>();
-        //Get the first three cars from other lanes.
+
+        // Get the first cars from other lanes without removing them, yet
         for (int i = 0; i < k; i++) {
+            // If the other lanes are empty, move on
             if (carList[i].size() == 0) {
                 continue;
             }
 
+            // Do not add the car we are dealing with currently, only the other lanes needed
         	if (i != fromLane) {
         		allowedCars.add(carList[i].peek());
         	}
         }
 
+        // If no car was added in the previous loop, then no other simultaneous departures will occur
         if (allowedCars.size() == 0) {
             return;
         }
-
 
         Iterator it = allowedCars.iterator();
         while (it.hasNext()) {
@@ -207,7 +196,7 @@ public class AIMC {
                 continue;                   
             } 
 
-            // opposite car
+            // Opposite car
             if (Math.abs(car.fromLane - fromLane) == 2) {
                 if (fromLane != left && car.direction != left) {
                     scheduleDeparture(e, car);
@@ -220,7 +209,7 @@ public class AIMC {
                 }
             }
 
-            // right car        
+            // Right car        
             if (fromLane == (car.fromLane + 1) % 4) {
                 if (direction == right && car.direction == right) {
                     scheduleDeparture(e, car);
@@ -235,79 +224,92 @@ public class AIMC {
         }
     }
 
-    boolean isSameDirection(int i, int j) {
-    	return (i == j);
-    }
-
-    void scheduleArrival() {
+    // Schedule arrival
+    private void scheduleArrival() {
+        // A random car with a random direction arrives
         int fromLane = RandTool.uniform(0,3);
-    	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
         int direction = RandTool.uniform(0,3);
-    	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction));
+        double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
+
+        // Add both to the main event list and specific queue for that lane
+        Event eventArrival = new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction);
+    	eventList.add(eventArrival);
         carList[fromLane].add(new Car(nextArrivalTime, direction, fromLane, carID));
 
-        System.out.println("Car "+carID+" will arrival at " + nextArrivalTime);
+        // Console debugging
+        System.out.println("++++ Car no: " + carID + " scheduled to arrive at " + nextArrivalTime);
         carID ++;
     }    
 
     // Schdule departure for the main car
-    void scheduleDeparture(Event e) {
+    private void scheduleDeparture(Event e) {
         double nextDepartureTime = clock + randomServiceTime();
+
+        // Add to the main event list
         Event eventDeparture = new Event(nextDepartureTime, Event.DEPARTURE, e.fromLane, e.carID, e.direction);
         eventList.add(eventDeparture);
-        //TO check if any car can be scheduled/go simultaneously
+
+        // Execute the simultaneous car allowal strategy
         allowTraffic(eventDeparture);
 
-        System.out.println("Car "+e.carID+" will departure at " + nextDepartureTime);
+        System.out.println("---- Car no: " + carID + " scheduled to depart at " + nextDepartureTime);
     }
 
-    //Schedule departure for cars from other lanes simultaneously
+    // Schedule departure for other cars
     private void scheduleDeparture(Event e, Car car) {
         double nextDepartureTime = e.eventTime;
-        eventList.add(new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane, car.carID, car.direction));
 
-        //debugging     
-        System.out.println("================AllowTraffic is scheduling: ==========");
-        System.out.println("Event's CarID, fromLane, time: " + e.carID+", " +e.fromLane + ", "+e.direction+", "+e.eventTime);
-        System.out.println("Other Cars "+car.carID+" will departure at " + nextDepartureTime);
+        // Add to the main event list
+        Event eventDeparture = new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane, car.carID, car.direction);
+        eventList.add(eventDeparture);
+
+        // Console debugging    
+        System.out.println("================ Simultaneous schedule: ==========");
+        System.out.println("Main car no: " + e.carID + " from " + e.fromLane + ", direction: " + e.direction + ", scheduled to depart at: " + e.eventTime);
+        System.out.println("Other car no: " + car.carID + " scheduled to depart at " + nextDepartureTime);
     }
 
-    double randomInterarrivalTime(int i) {
+    private double randomInterarrivalTime(int i) {
         return exponential(arrivalRate);
     }
 
     // TO DO: change to fixed based on direction
-    double randomServiceTime() {
-        // Assignment 4 requires the serviceRates to be the same
+    private double randomServiceTime() {
         return exponential(serviceRate);
     }
 
-    double exponential(double lambda) {
+    private double exponential(double lambda) {
         return (1.0 / lambda) * (- Math.log(1.0 - RandTool.uniform()));
     }
 
-    void stats() {
+    private void stats() {
         if (numDepartures == 0) {
             return;
         }
         avgWaitTime = totalWaitTime / numDepartures;
         avgSystemTime = totalSystemTime / numDepartures;
     }
+    //
+    // End simulation methods
+    ////////////////////////////////////////////////////////////////////
 
-    //getter for carList
-    public PriorityQueue<Car>[] getCarList() {
-        return carList;
-    }
-
-
-    /////////////////////////////////////////////////////////////////////
-    // main
+    ////////////////////////////////////////////////////////////////////
+    // Main method
+    //
     public static void main(String[] argv) {
         AIMC aimc = new AIMC();
-        while(true) {
+
+        Scanner scanner = new Scanner(System.in);
+        String key = scanner.nextLine();
+        while(key.equals("")) {
             aimc.nextStep();
+            
+            key = scanner.nextLine();
         }
-    } 
+    }
+    //
+    // End main method
+    ////////////////////////////////////////////////////////////////////
 }
 
 
