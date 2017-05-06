@@ -13,7 +13,7 @@ import javax.swing.event.*;
 */
 
 
-public class AIMCGUI extends JPanel{
+public class AIMCGUI extends JPanel implements Observer {
 
 	private int roadWidth = 60;
     private int roadLength = 200;
@@ -39,6 +39,7 @@ public class AIMCGUI extends JPanel{
 
 	public AIMCGUI() {
         aimc = new AIMC();
+        aimc.addObserver(this);
         carList = aimc.getCarList();
 		makeFrame();
 	}
@@ -316,7 +317,18 @@ public class AIMCGUI extends JPanel{
         this.repaint();
     }
 
+    // Override update() method of the Observer class
+    public void update(Observable obs, Object aimc) {
+        // Draw the directional arrows when the departure occurs
+        drawDeparture((AIMC) aimc);
+    }
+
+    // Draw the directional arrows when the departure occurs
+    private void drawDeparture(AIMC aimc) {
+        System.out.println("-------------> Departure occuring <-------------------- ");
+    }
+
 	public static void main(String[] argv) {
-        new AIMCGUI();
+        AIMCGUI gui = new AIMCGUI();
     }	
 }

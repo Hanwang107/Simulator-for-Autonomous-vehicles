@@ -13,7 +13,7 @@ import javax.swing.event.*;
 */
 
 @SuppressWarnings("unchecked")
-public class AIMC {
+public class AIMC extends Observable {
 	// Animation and drawing
     Thread currentThread;  
     boolean isPaused = false;
@@ -90,12 +90,14 @@ public class AIMC {
     	    handleArrival(e);
     	}
     	else if (e.type == Event.DEPARTURE) {
+            setChanged();
+            notifyObservers();
     	    handleDeparture(e);
     	}
 
     	// Do stats after event is processed.
     	stats();
-        
+
     	// if (numDepartures % 1000 == 0) {
     	//     System.out.println ("After " + numDepartures + " departures: avgWait=" + avgWaitTime
         //            + "  avgSystemTime=" + avgSystemTime);
