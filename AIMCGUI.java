@@ -180,53 +180,67 @@ public class AIMCGUI extends JPanel{
     {
         JPanel panel = new JPanel ();
 		JButton resetB = new JButton ("Reset");
-		resetB.addActionListener (
-			new ActionListener () {
-			   public void actionPerformed (ActionEvent a)
+
+        panel.add (new JLabel ("          "));
+        JButton nextB = new JButton ("Next");
+
+        panel.add (new JLabel ("          "));
+        JButton goB = new JButton ("Go");
+
+        panel.add (new JLabel ("  "));
+        JButton pauseB = new JButton ("Pause");
+        pauseB.setEnabled(false);
+
+        panel.add (new JLabel ("           "));
+        JButton quitB = new JButton ("Quit");
+
+		resetB.addActionListener(
+			new ActionListener() {
+			   public void actionPerformed(ActionEvent a)
 			   {
-			       reset ();
+                    reset();
+                    pauseB.setEnabled(false);
+                    nextB.setEnabled(true);
+                    goB.setEnabled(true);
 			   }
 			});
 		panel.add (resetB);
 
-        panel.add (new JLabel ("          "));
-		JButton nextB = new JButton ("Next");
-		nextB.addActionListener (
-			new ActionListener () {
-			   public void actionPerformed (ActionEvent a)
+		nextB.addActionListener(
+			new ActionListener() {
+			   public void actionPerformed(ActionEvent a)
 			   {
-			       nextStep ();
+			       nextStep();
 			   }
 			});
 		panel.add (nextB);
 
-
-        panel.add (new JLabel ("          "));
-		JButton goB = new JButton ("Go");
-		goB.addActionListener (
-			new ActionListener () {
-			   public void actionPerformed (ActionEvent a)
+		goB.addActionListener(
+			new ActionListener() {
+			   public void actionPerformed(ActionEvent a)
 			   {
-			       go ();
+                    goB.setEnabled(false);
+                    nextB.setEnabled(false);
+                    pauseB.setEnabled(true);
+                    go();
 			   }
 			});
 		panel.add (goB);
 
-        panel.add (new JLabel ("  "));
-		JButton pauseB = new JButton ("Pause");
-		pauseB.addActionListener (
-			new ActionListener () {
-			   public void actionPerformed (ActionEvent a)
+		pauseB.addActionListener(
+			new ActionListener() {
+			   public void actionPerformed(ActionEvent a)
 			   {
-			       pause ();
+                    pauseB.setEnabled(false);
+                    nextB.setEnabled(true);
+                    goB.setEnabled(true);
+                    pause();
 			   }
 			});
 		panel.add (pauseB);
 
-        panel.add (new JLabel ("           "));
-		JButton quitB = new JButton ("Quit");
-		quitB.addActionListener (
-			new ActionListener () {
+		quitB.addActionListener(
+			new ActionListener() {
 			   public void actionPerformed (ActionEvent a)
 			   {
 			       System.exit(0);
@@ -241,7 +255,7 @@ public class AIMCGUI extends JPanel{
     ///////////////////////////////////////////////////////////////////////
     // Animation
 
-    void go ()
+    void go()
     {
         // Fire off a thread so that Swing's thread isn't used.
         if (isPaused) {
@@ -264,32 +278,31 @@ public class AIMCGUI extends JPanel{
         currentThread.start();
     }
 
-    void pause () 
+    void pause() 
     {
         isPaused = true;
     }
     
 
-    void simulate ()
+    void simulate()
     {
         while (true) {
 
             if (! isPaused) {
-                //aimc.nextStep ();
                 nextStep();
             }
             
         this.repaint();
 
             try {
-                Thread.sleep (sleepTime);
+                Thread.sleep(sleepTime);
             }
             catch (InterruptedException e){
                 break;
             }
         } 
 
-        this.repaint ();
+        this.repaint();
     }
 
     void nextStep() {
@@ -303,8 +316,7 @@ public class AIMCGUI extends JPanel{
         this.repaint();
     }
 
-	public static void main (String[] argv) {
+	public static void main(String[] argv) {
         new AIMCGUI();
-    }
-	
+    }	
 }
