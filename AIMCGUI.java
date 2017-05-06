@@ -35,6 +35,7 @@ public class AIMCGUI extends JPanel implements Observer {
 
 
 	private AIMC aimc;
+    private Event currentEvent;
 
 
 	public AIMCGUI() {
@@ -318,14 +319,16 @@ public class AIMCGUI extends JPanel implements Observer {
     }
 
     // Override update() method of the Observer class
-    public void update(Observable obs, Object aimc) {
+    public void update(Observable aimcgui, Object aimc) {
         // Draw the directional arrows when the departure occurs
-        drawDeparture((AIMC) aimc);
+        drawDeparture();
     }
 
     // Draw the directional arrows when the departure occurs
-    private void drawDeparture(AIMC aimc) {
+    private void drawDeparture() {
+        currentEvent = aimc.getCurrentEvent();
         System.out.println("-------------> Departure occuring <-------------------- ");
+        System.out.println("GUI msg: car = " + currentEvent.carID + ", lane = " + currentEvent.fromLane + ", direction = " + currentEvent.direction);
     }
 
 	public static void main(String[] argv) {

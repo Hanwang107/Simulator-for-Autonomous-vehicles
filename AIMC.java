@@ -32,6 +32,7 @@ public class AIMC extends Observable {
     private double serviceRate = 1.0;
 
     private PriorityQueue<Event> eventList;
+    private Event currentEvent = null;
     private PriorityQueue<Car>[] carList = new PriorityQueue[k];
     private double clock;
 
@@ -56,7 +57,7 @@ public class AIMC extends Observable {
 
     void reset() {
     	eventList = new PriorityQueue<Event>();
-        //carList = new PriorityQueue<Car>();
+        Event currentEvent = null;
         for (int i = 0; i < k; i++) {
             carList[i] = new PriorityQueue<Car>();
         }
@@ -82,17 +83,19 @@ public class AIMC extends Observable {
     	}
 
     	// Extract the next event and set the time to that event.
-    	Event e = eventList.poll();
-    	clock = e.eventTime;
+    	currentEvent = eventList.poll();
+    	clock = currentEvent.eventTime;
 
     	// Handle each type separately.
-    	if (e.type == Event.ARRIVAL) {
-    	    handleArrival(e);
+    	if (currentEvent.type == Event.ARRIVAL) {
+    	    handleArrival(currentEvent);
     	}
-    	else if (e.type == Event.DEPARTURE) {
+    	else if (currentEvent.type == Event.DEPARTURE) {
+            // Let GUI know the departure occured
             setChanged();
             notifyObservers();
-    	    handleDeparture(e);
+
+    	    handleDeparture(currentEvent);
     	}
 
     	// Do stats after event is processed.
@@ -110,7 +113,7 @@ public class AIMC extends Observable {
     	// Lastly, we need to schedule the next arrival.
         //Debugging
         System.out.println("**********************************************************");
-        System.out.println("This is Car" + e.carID + " which is arrives at Lane" + e.fromLane + " and turns to " +e.direction);
+        System.out.println("Car " + e.carID + " arrives at lane " + e.fromLane + " and turns to " + e.direction);
         //System.out.println("The size of this lane: " + carList[e.fromLane].size());
 
 
@@ -151,7 +154,7 @@ public class AIMC extends Observable {
 
         //Debugging
         //System.out.println("****************");
-        System.out.println("This is Car" + e.carID + " which departs from " + e.fromLane + " to " + e.direction);
+        System.out.println("Car " + e.carID + " which departs from lane " + e.fromLane + " to " + e.direction);
 
 
     	//Car c = queues[direction].removeFirst();
@@ -301,9 +304,14 @@ public class AIMC extends Observable {
         avgSystemTime = totalSystemTime / numDepartures;
     }
 
-    //getter for carList
+    // getter for carList
     public PriorityQueue<Car>[] getCarList() {
         return carList;
+    }
+
+    // getter for currentEvent
+    public Event getCurrentEvent() {
+        return currentEvent;
     }
 
     private void removeDuplicateEvent(int carID, int type) {
@@ -316,7 +324,6 @@ public class AIMC extends Observable {
           }
         }
     }
-
 
     ///////////////////////////////////////////////////////////////////
     //main
