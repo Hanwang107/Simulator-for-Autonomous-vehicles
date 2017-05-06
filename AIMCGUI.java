@@ -136,7 +136,7 @@ public class AIMCGUI extends JPanel implements Observer {
             if (isDeparture && departingLane == 0 && aimc.departFlag[0]) {
                 g2.setColor(Color.green);
                 g2.setStroke(new BasicStroke(2f));
-                
+
                 if (arrowDirection == right) {
                     g2.fillRect(offset + roadLength, D.height / 2, roadWidth, roadWidth);
                 } else if (arrowDirection == straight) {
@@ -153,32 +153,68 @@ public class AIMCGUI extends JPanel implements Observer {
             Object[] cars = carList[1].toArray();
             // Draw top cars (fromLane: 1)
             for (int i = 0; i < cars.length; i++) {
+                // Car
                 g2.setColor(Color.magenta);
                 int x = offset + roadLength +wGap;
                 int y = D.height / 2 - roadWidth - (i + 1) * (lGap + carLength);
                 g2.fillRect(x, y, carWidth, carLength);   
 
+                // Id text
                 g2.setColor(Color.black);
                 Car car = (Car) cars[i];
                 String carId = "" + car.carID;
                 g2.drawString(carId, x, y + carLength / 2);     
-            }            
+            }
+
+            // Direction of the departure is simulated by drawing rectangles
+            if (isDeparture && departingLane == 1 && aimc.departFlag[1]) {
+                g2.setColor(Color.magenta);
+                g2.setStroke(new BasicStroke(2f));
+                
+                if (arrowDirection == right) {
+                    g2.fillRect(offset + roadLength, D.height / 2 - roadWidth, roadWidth, roadWidth);
+                } else if (arrowDirection == straight) {
+                    g2.fillRect(offset + roadLength, D.height / 2 - roadWidth, roadWidth, 2 * roadWidth);
+                } else {
+                    g2.fillRect(offset + roadLength, D.height / 2 - roadWidth, roadWidth, 2 * roadWidth);
+                    g2.fillRect(offset + roadLength + roadWidth, D.height / 2, roadWidth, roadWidth);
+                }
+                aimc.departFlag[1] = false;
+            }
         }
 
         if (carList[2].size() != 0 || carList[2] != null) {
             Object[] cars = carList[2].toArray();
             // Draw right cars (fromLane: 2)
             for (int i = 0; i < cars.length; i++) {
+                // Car
                 g2.setColor(Color.orange); 
                 int x = offset + roadLength + 2 * roadWidth + (i + 1) * lGap +  i * carLength;
                 int y = D.height / 2 - carWidth - wGap;
                 g2.fillRect(x, y, carLength, carWidth);    
 
+                // Id text
                 g2.setColor(Color.black);
                 Car car = (Car) cars[i];
                 String carId = "" + car.carID;
                 g2.drawString(carId, x, y + carWidth / 2);       
-            }            
+            }
+
+            // Direction of the departure is simulated by drawing rectangles
+            if (isDeparture && departingLane == 2 && aimc.departFlag[2]) {
+                g2.setColor(Color.orange);
+                g2.setStroke(new BasicStroke(2f));
+
+                if (arrowDirection == right) {
+                    g2.fillRect(offset + roadLength + roadWidth, D.height / 2 - roadWidth, roadWidth, roadWidth);
+                } else if (arrowDirection == straight) {
+                    g2.fillRect(offset + roadLength, D.height / 2 - roadWidth, 2 * roadWidth, roadWidth);
+                } else {
+                    g2.fillRect(offset + roadLength, D.height / 2  - roadWidth, 2 * roadWidth, roadWidth);
+                    g2.fillRect(offset + roadLength, D.height / 2, roadWidth, roadWidth);
+                }
+                aimc.departFlag[2] = false;
+            }
         }
 
         if (carList[3].size() != 0 || carList[3] != null) {
@@ -194,7 +230,23 @@ public class AIMCGUI extends JPanel implements Observer {
                 Car car = (Car) cars[i];
                 String carId = "" + car.carID;
                 g2.drawString(carId, x, y + carLength / 2);           
-            }            
+            }
+
+            // Direction of the departure is simulated by drawing rectangles
+            if (isDeparture && departingLane == 3 && aimc.departFlag[3]) {
+                g2.setColor(Color.cyan);
+                g2.setStroke(new BasicStroke(2f));
+
+                if (arrowDirection == right) {
+                    g2.fillRect(offset + roadLength + roadWidth, D.height / 2, roadWidth, roadWidth);
+                } else if (arrowDirection == straight) {
+                    g2.fillRect(offset + roadLength + roadWidth, D.height / 2 - roadWidth, roadWidth, 2 * roadWidth);
+                } else {
+                    g2.fillRect(offset + roadLength + roadWidth, D.height / 2 - roadWidth, roadWidth, 2 * roadWidth);
+                    g2.fillRect(offset + roadLength + roadWidth, D.height / 2, roadWidth, roadWidth);
+                }
+                aimc.departFlag[3] = false;
+            }
         }
 	}    
 
