@@ -145,11 +145,11 @@ public class AIMC extends Observable {
     	
         //remove it from carList, set departFlag for that lane
         Car car = carList[e.fromLane].poll();
-        departFlag[e.fromLane] = true;;
+        departFlag[e.fromLane] = true;
 
         //Debugging
         //System.out.println("****************");
-        System.out.println("Car " + e.carID + " which departs from lane " + e.fromLane + " to " + e.direction);
+        System.out.println("Car " + e.carID + " departs from lane " + e.fromLane + " to " + e.direction);
 
 
     	//Car c = queues[direction].removeFirst();
@@ -197,9 +197,9 @@ public class AIMC extends Observable {
                 removeDuplicateEvent(car.carID, Event.DEPARTURE);
 
                 scheduleDeparture(e, car);
-                //System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);
+
                 //Remove this car from carlist and eventlist
-                Car carToBeRemoved = carList[fromLane].poll();
+                Car carToBeRemoved = carList[fromLane].peek();
                 allowedCars.remove(carToBeRemoved);
                 //eventList.remove(new Event(carToBeRemoved.arrivalTime, 2, carToBeRemoved.fromLane, carToBeRemoved.carID, car.direction));
                 continue;                   
@@ -213,7 +213,7 @@ public class AIMC extends Observable {
                     scheduleDeparture(e, car);
                     //System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);
                     //Remove this car from carlist and eventlist
-                    Car carToBeRemoved= carList[fromLane].poll();
+                    Car carToBeRemoved = carList[fromLane].peek();
                     allowedCars.remove(carToBeRemoved);
                     //eventList.remove(new Event(carToBeRemoved.arrivalTime, 2, carToBeRemoved.fromLane, carToBeRemoved.carID, car.direction));
                     continue; 
@@ -228,7 +228,7 @@ public class AIMC extends Observable {
                     scheduleDeparture(e, car);
                     //System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);                    
                     //Remove this car from carlist and eventlist
-                    Car carToBeRemoved= carList[fromLane].poll();
+                    Car carToBeRemoved = carList[fromLane].peek();
                     allowedCars.remove(carToBeRemoved);
                     //eventList.remove(new Event(carToBeRemoved.arrivalTime, 2, carToBeRemoved.fromLane, carToBeRemoved.carID, car.direction));
                     continue;                     
@@ -244,7 +244,7 @@ public class AIMC extends Observable {
     	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction));
         // carList[fromLane].add(new Car(nextArrivalTime, direction, fromLane, carID));
 
-        System.out.println("Car " + carID + " will arrive at " + nextArrivalTime);
+        //System.out.println("Car " + carID + " will arrive at " + nextArrivalTime);
         carID ++;
     }    
 
@@ -256,7 +256,7 @@ public class AIMC extends Observable {
         //TO check if any car can be scheduled/go simultaneously
         allowTraffic(eventDeparture);
 
-        System.out.println("Car " + e.carID + " will depart at " + nextDepartureTime);
+        //System.out.println("Car " + e.carID + " will depart at " + nextDepartureTime);
     }
 
     //Schedule departure for cars from other lanes simultaneously
@@ -276,9 +276,7 @@ public class AIMC extends Observable {
         return exponential(arrivalRate);
     }
 
-    // TO DO: change to fixed based on direction
     double randomServiceTime() {
-        // Assignment 4 requires the serviceRates to be the same
         return exponential(serviceRate);
     }
 

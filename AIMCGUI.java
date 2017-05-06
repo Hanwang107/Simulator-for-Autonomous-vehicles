@@ -32,7 +32,6 @@ public class AIMCGUI extends JPanel implements Observer {
 
 	private AIMC aimc;
     private Event currentEvent;
-    private int departingLane;
     private int arrowDirection;
 
     // Car direction
@@ -113,6 +112,7 @@ public class AIMCGUI extends JPanel implements Observer {
   		g2.setColor (Color.red);
     	g2.drawRect(offset + roadLength, D.height / 2 - roadWidth, 2 * roadWidth, 2 * roadWidth);
 
+        carList = aimc.getCarList();
 
         // Draw Cars
         if (carList[0].size() != 0 || carList[0] != null) {
@@ -133,7 +133,7 @@ public class AIMCGUI extends JPanel implements Observer {
             }
 
             // Direction of the departure is simulated by drawing rectangles
-            if (isDeparture && departingLane == 0 && aimc.departFlag[0]) {
+            if (isDeparture && aimc.departFlag[0]) {
                 g2.setColor(Color.green);
                 g2.setStroke(new BasicStroke(2f));
 
@@ -167,7 +167,7 @@ public class AIMCGUI extends JPanel implements Observer {
             }
 
             // Direction of the departure is simulated by drawing rectangles
-            if (isDeparture && departingLane == 1 && aimc.departFlag[1]) {
+            if (isDeparture && aimc.departFlag[1]) {
                 g2.setColor(Color.magenta);
                 g2.setStroke(new BasicStroke(2f));
                 
@@ -201,7 +201,7 @@ public class AIMCGUI extends JPanel implements Observer {
             }
 
             // Direction of the departure is simulated by drawing rectangles
-            if (isDeparture && departingLane == 2 && aimc.departFlag[2]) {
+            if (isDeparture && aimc.departFlag[2]) {
                 g2.setColor(Color.orange);
                 g2.setStroke(new BasicStroke(2f));
 
@@ -233,7 +233,7 @@ public class AIMCGUI extends JPanel implements Observer {
             }
 
             // Direction of the departure is simulated by drawing rectangles
-            if (isDeparture && departingLane == 3 && aimc.departFlag[3]) {
+            if (isDeparture && aimc.departFlag[3]) {
                 g2.setColor(Color.cyan);
                 g2.setStroke(new BasicStroke(2f));
 
@@ -344,7 +344,6 @@ public class AIMCGUI extends JPanel implements Observer {
         currentThread = new Thread () {
                 public void run () 
                 {   
-                    //doAnimation = true;
                     simulate ();
                 }
                 
@@ -390,22 +389,16 @@ public class AIMCGUI extends JPanel implements Observer {
     }
 
     // Override update() method of the Observer class
-    public void update(Observable aimcgui, Object aimc) {
-        // Draw the directional arrows when the departure occurs
+    public void update(Observable obs, Object ob) {
+        // Draw the directional squares when the departure occurs
         isDeparture = true;
-        drawDeparture();
-    }
-
-    // Draw the directional arrows when the departure occurs
-    private void drawDeparture() {
         currentEvent = aimc.getCurrentEvent();
-        departingLane = currentEvent.fromLane;
         arrowDirection = currentEvent.direction;
 
         // Debugging
-        System.out.println("-------------> Departure occuring <-------------------- ");
-        System.out.println("GUI msg: car = " + currentEvent.carID + ", lane = " + departingLane + ", direction = " + arrowDirection);
-        System.out.println("departFlag[" + departingLane + "] = " + aimc.departFlag[departingLane]);
+        //System.out.println("-------------> Departure occuring <-------------------- ");
+        // System.out.println("GUI msg: car = " + currentEvent.carID + ", lane = " + currentEvent.fromLane + ", direction = " + arrowDirection);
+        // System.out.println("departFlag[" + currentEvent.fromLane + "] = " + aimc.departFlag[currentEvent.fromLane]);
         repaint();
     }
 
