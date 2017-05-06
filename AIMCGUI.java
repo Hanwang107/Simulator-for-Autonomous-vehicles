@@ -332,10 +332,10 @@ public class AIMCGUI extends JPanel implements Observer {
     void go()
     {
         // Fire off a thread so that Swing's thread isn't used.
-        // if (isPaused) {
-        //     isPaused = false;
-        //     return;
-        // }
+        if (isPaused) {
+            isPaused = false;
+            //return;
+        }
         if (currentThread != null) {
             currentThread.interrupt ();
             currentThread = null;
