@@ -1,17 +1,10 @@
 import java.util.*;
-import java.awt.*;
-import java.awt.event.*;
-import java.awt.geom.*;
-import javax.swing.*;
-import javax.swing.event.*;
-
 /** 
 *  CSCI 6341/ Final Project: Automatic Crossroads Control and Management
 *  Author: Ismayil Hasanov, Yubo Tsai, Han Wang
 *  Date : Apr 25 2017
 *  Description: Queue controller and algorithms for AIMC
 */
-
 @SuppressWarnings("unchecked")
 public class AIMC extends Observable {
 	// Animation and drawing
@@ -19,13 +12,15 @@ public class AIMC extends Observable {
     boolean isPaused = false;
     int sleepTime = 50;
     
-    LinkedList<Car>[] queues;
+    //LinkedList<Car>[] queues;    
 
     // Number of lanes
-    int k = 4;
+    private int k = 4;
+
+    public boolean[] departFlag = new boolean[k];
 
     // Avg time between arrivals = 1.0 (lambda). Can be changed via setter
-    double arrivalRate = 1.0;
+    private double arrivalRate = 1.0;
 
     // Assignment 4: Assume the service time is the same at all the servers,
     // and that each service time is exponentially distributed with mean 1.0
@@ -38,7 +33,7 @@ public class AIMC extends Observable {
 
 
     // Statistics.
-    int numArrivals;                    // How many arrived?
+    int numArrivals;                        // How many arrived?
     int numDepartures;                      // How many left?
     double totalWaitTime, avgWaitTime;      // For time spent in queue
     double totalSystemTime, avgSystemTime;  // For time spent in system
@@ -60,6 +55,7 @@ public class AIMC extends Observable {
         Event currentEvent = null;
         for (int i = 0; i < k; i++) {
             carList[i] = new PriorityQueue<Car>();
+            departFlag[i] = false;
         }
 
 	   // Initialize stats variables.
@@ -91,11 +87,10 @@ public class AIMC extends Observable {
     	    handleArrival(currentEvent);
     	}
     	else if (currentEvent.type == Event.DEPARTURE) {
+            handleDeparture(currentEvent);
             // Let GUI know the departure occured
             setChanged();
-            notifyObservers();
-
-    	    handleDeparture(currentEvent);
+            notifyObservers();    	    
     	}
 
     	// Do stats after event is processed.
@@ -148,9 +143,9 @@ public class AIMC extends Observable {
 
         totalSystemTime += clock - e.eventTime;
     	
-        //remove it from carlist
+        //remove it from carList, set departFlag for that lane
         Car car = carList[e.fromLane].poll();
-
+        departFlag[e.fromLane] = true;;
 
         //Debugging
         //System.out.println("****************");
@@ -159,8 +154,6 @@ public class AIMC extends Observable {
 
     	//Car c = queues[direction].removeFirst();
 
-
-
     	// if (queues[direction].size() > 0) {
     	//     // There's a waiting customer => schedule departure.
     	//     Car waitingCar = queues[direction].get(0);
@@ -168,10 +161,7 @@ public class AIMC extends Observable {
     	//     totalWaitTime += clock - waitingCar.entryTime;
     	//     scheduleDeparture(direction);
     	// }
-
-
     }
-
 
     //Simultaneous going strategy
     void allowTraffic(Event e) {
@@ -250,7 +240,7 @@ public class AIMC extends Observable {
     void scheduleArrival() {
         int fromLane = RandTool.uniform(0,3);
     	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
-        int direction = RandTool.uniform(0,3);
+        int direction = RandTool.uniform(0,2);
     	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction));
         // carList[fromLane].add(new Car(nextArrivalTime, direction, fromLane, carID));
 
@@ -277,7 +267,7 @@ public class AIMC extends Observable {
         eventList.add(new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane, car.carID, car.direction));
 
         //debugging     
-        System.out.println("================AllowTraffic is scheduling: ==========");
+        System.out.println("================ allowTraffic is scheduling: ==========");
         System.out.println("Event's CarID, fromLane, time: " + e.carID+", " +e.fromLane + ", "+e.direction+", "+e.eventTime);
         System.out.println("Other Cars "+car.carID+" will depart at " + nextDepartureTime);
     }

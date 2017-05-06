@@ -4,15 +4,12 @@ import java.awt.event.*;
 import java.awt.geom.*;
 import javax.swing.*;
 import javax.swing.event.*;
-
 /** 
 *  CSCI 6341/ Final Project: Automatic Crossroads Control and Management
 *  Author: Ismayil Hasanov, Yubo Tsai, Han Wang
 *  Date : Apr 25 2017
 *  Description: GUI and drawing
 */
-
-
 public class AIMCGUI extends JPanel implements Observer {
 
 	private int roadWidth = 60;
@@ -25,7 +22,7 @@ public class AIMCGUI extends JPanel implements Observer {
     private int wGap = 15; //(roadWidth - carWidth) / 2;
 
     // Animation and drawing.
-    boolean doAnimation = false;
+    boolean isDeparture = false;
     Thread currentThread;  
     boolean isPaused = false;
     int sleepTime = 500;
@@ -33,10 +30,15 @@ public class AIMCGUI extends JPanel implements Observer {
 
     PriorityQueue<Car>[] carList;
 
-
 	private AIMC aimc;
     private Event currentEvent;
+    private int departingLane;
+    private int arrowDirection;
 
+    // Car direction
+    double left = Car.LEFT;
+    double right = Car.RIGHT;
+    double straight = Car.STRAIGHT;
 
 	public AIMCGUI() {
         aimc = new AIMC();
@@ -65,67 +67,85 @@ public class AIMCGUI extends JPanel implements Observer {
 
         // Clear.
         Dimension D = this.getSize();
-        g.setColor (Color.white);
-        g.fillRect (0,0, D.width,D.height);
+        g2.setColor (Color.white);
+        g2.fillRect (0,0, D.width,D.height);
 
         g2.setStroke(new BasicStroke(2f));  
 
         // Draw left road.
-        g.setColor (Color.black);
+        g2.setColor (Color.black);
         g2.drawLine (offset, D.height / 2 - roadWidth, offset + roadLength, D.height / 2 - roadWidth); // lane 0
-        g.setColor (Color.yellow);
+        g2.setColor (Color.yellow);
         g2.drawLine (offset, D.height / 2, offset + roadLength, D.height / 2); // lane 1
-        g.setColor (Color.black);
+        g2.setColor (Color.black);
         g2.drawLine (offset, D.height / 2 + roadWidth, offset + roadLength, D.height / 2 + roadWidth);
 
         // Draw top road.
-        g.setColor (Color.black);
+        g2.setColor (Color.black);
         g2.drawLine (offset + roadLength, D.height / 2 - roadWidth, offset + roadLength, D.height / 2 - roadWidth - roadLength); // lane 2
-        g.setColor (Color.yellow);
+        g2.setColor (Color.yellow);
         g2.drawLine (offset + roadLength + roadWidth, D.height / 2 - roadWidth, offset + roadLength + roadWidth, D.height / 2 - roadWidth - roadLength); // lane 3
-        g.setColor (Color.black);
+        g2.setColor (Color.black);
         g2.drawLine (offset + roadLength + 2 * roadWidth , D.height / 2 - roadWidth, offset + roadLength + 2 * roadWidth, D.height / 2 - roadWidth - roadLength);
 
         // Draw right road.
         offset += roadLength + 2 * roadWidth;
-        g.setColor (Color.black);
+        g2.setColor (Color.black);
         g2.drawLine (offset, D.height / 2 - roadWidth, offset + roadLength, D.height / 2 - roadWidth); // lane 4
-        g.setColor (Color.yellow);
+        g2.setColor (Color.yellow);
         g2.drawLine (offset, D.height / 2, offset + roadLength, D.height / 2); // lane 5
-        g.setColor (Color.black);
+        g2.setColor (Color.black);
         g2.drawLine (offset, D.height / 2 + roadWidth, offset + roadLength, D.height / 2 + roadWidth);
 
         // Draw bottom road.
         offset -= roadLength + 2 * roadWidth;
-        g.setColor (Color.black);
+        g2.setColor (Color.black);
         g2.drawLine (offset + roadLength, D.height / 2 + roadWidth, offset + roadLength, D.height / 2 + roadWidth + roadLength); // lane 6
-        g.setColor (Color.yellow);
+        g2.setColor (Color.yellow);
         g2.drawLine (offset + roadLength + roadWidth, D.height / 2 + roadWidth, offset + roadLength + roadWidth, D.height / 2 + roadWidth + roadLength); // lane 7
-        g.setColor (Color.black);
+        g2.setColor (Color.black);
         g2.drawLine (offset + roadLength + 2 * roadWidth , D.height / 2 + roadWidth, offset + roadLength + 2 * roadWidth, D.height / 2 + roadWidth + roadLength);
 
         // Draw intersection box
         final float dash1[] = { 10.0f };
   		final BasicStroke dashed = new BasicStroke(1.0f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10.0f, dash1, 0.0f);
   		g2.setStroke(dashed);
-  		g.setColor (Color.red);
+  		g2.setColor (Color.red);
     	g2.drawRect(offset + roadLength, D.height / 2 - roadWidth, 2 * roadWidth, 2 * roadWidth);
 
 
         // Draw Cars
         if (carList[0].size() != 0 || carList[0] != null) {
             Object[] cars = carList[0].toArray();
-             // Draw left cars (fromLane: 0)
+            // Draw left cars (fromLane: 0)
             for (int i = 0; i < cars.length; i++) {
-                g.setColor(Color.green);
+                // Car
+                g2.setColor(Color.green);
                 int x = offset + roadLength - (i + 1) * (lGap + carLength);
                 int y = D.height / 2 + wGap;
                 g2.fillRect(x, y, carLength, carWidth);
 
-                g.setColor(Color.black);
+                // Id text
+                g2.setColor(Color.black);
                 Car car = (Car) cars[i];
                 String carId = "" + car.carID;
                 g2.drawString(carId, x, y + carWidth / 2);
+            }
+
+            // Direction of the departure is simulated by drawing rectangles
+            if (isDeparture && departingLane == 0 && aimc.departFlag[0]) {
+                g2.setColor(Color.green);
+                g2.setStroke(new BasicStroke(2f));
+                
+                if (arrowDirection == right) {
+                    g2.fillRect(offset + roadLength, D.height / 2, roadWidth, roadWidth);
+                } else if (arrowDirection == straight) {
+                    g2.fillRect(offset + roadLength, D.height / 2, 2 * roadWidth, roadWidth);
+                } else {
+                    g2.fillRect(offset + roadLength, D.height / 2, 2 * roadWidth, roadWidth);
+                    g2.fillRect(offset + roadLength + roadWidth, D.height / 2 - roadWidth, roadWidth, roadWidth);
+                }
+                aimc.departFlag[0] = false;
             }
         }
 
@@ -133,12 +153,12 @@ public class AIMCGUI extends JPanel implements Observer {
             Object[] cars = carList[1].toArray();
             // Draw top cars (fromLane: 1)
             for (int i = 0; i < cars.length; i++) {
-                g.setColor(Color.magenta);
+                g2.setColor(Color.magenta);
                 int x = offset + roadLength +wGap;
                 int y = D.height / 2 - roadWidth - (i + 1) * (lGap + carLength);
                 g2.fillRect(x, y, carWidth, carLength);   
 
-                g.setColor(Color.black);
+                g2.setColor(Color.black);
                 Car car = (Car) cars[i];
                 String carId = "" + car.carID;
                 g2.drawString(carId, x, y + carLength / 2);     
@@ -149,12 +169,12 @@ public class AIMCGUI extends JPanel implements Observer {
             Object[] cars = carList[2].toArray();
             // Draw right cars (fromLane: 2)
             for (int i = 0; i < cars.length; i++) {
-                g.setColor(Color.orange); 
+                g2.setColor(Color.orange); 
                 int x = offset + roadLength + 2 * roadWidth + (i + 1) * lGap +  i * carLength;
                 int y = D.height / 2 - carWidth - wGap;
                 g2.fillRect(x, y, carLength, carWidth);    
 
-                g.setColor(Color.black);
+                g2.setColor(Color.black);
                 Car car = (Car) cars[i];
                 String carId = "" + car.carID;
                 g2.drawString(carId, x, y + carWidth / 2);       
@@ -165,12 +185,12 @@ public class AIMCGUI extends JPanel implements Observer {
             Object[] cars = carList[3].toArray();
              // Draw bottom cars (fromLane: 3)
             for (int i = 0; i < cars.length; i++) {
-                g.setColor(Color.cyan);
+                g2.setColor(Color.cyan);
                 int x = offset + roadLength + roadWidth + wGap;
                 int y = D.height / 2 + roadWidth + (i + 1) * lGap + i * carLength;
                 g2.fillRect(x, y, carWidth, carLength); 
 
-                g.setColor(Color.black);
+                g2.setColor(Color.black);
                 Car car = (Car) cars[i];
                 String carId = "" + car.carID;
                 g2.drawString(carId, x, y + carLength / 2);           
@@ -283,8 +303,7 @@ public class AIMCGUI extends JPanel implements Observer {
     void pause() 
     {
         isPaused = true;
-    }
-    
+    }    
 
     void simulate()
     {
@@ -294,7 +313,7 @@ public class AIMCGUI extends JPanel implements Observer {
                 nextStep();
             }
             
-        this.repaint();
+            repaint();
 
             try {
                 Thread.sleep(sleepTime);
@@ -304,31 +323,38 @@ public class AIMCGUI extends JPanel implements Observer {
             }
         } 
 
-        this.repaint();
+        repaint();
     }
 
     void nextStep() {
         aimc.nextStep();
-        this.repaint();
+        repaint();
     }
 
     void reset() {
         pause();
         aimc.reset();
-        this.repaint();
+        repaint();
     }
 
     // Override update() method of the Observer class
     public void update(Observable aimcgui, Object aimc) {
         // Draw the directional arrows when the departure occurs
+        isDeparture = true;
         drawDeparture();
     }
 
     // Draw the directional arrows when the departure occurs
     private void drawDeparture() {
         currentEvent = aimc.getCurrentEvent();
+        departingLane = currentEvent.fromLane;
+        arrowDirection = currentEvent.direction;
+
+        // Debugging
         System.out.println("-------------> Departure occuring <-------------------- ");
-        System.out.println("GUI msg: car = " + currentEvent.carID + ", lane = " + currentEvent.fromLane + ", direction = " + currentEvent.direction);
+        System.out.println("GUI msg: car = " + currentEvent.carID + ", lane = " + departingLane + ", direction = " + arrowDirection);
+        System.out.println("departFlag[" + departingLane + "] = " + aimc.departFlag[departingLane]);
+        repaint();
     }
 
 	public static void main(String[] argv) {
