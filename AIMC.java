@@ -7,11 +7,6 @@ import java.util.*;
 */
 @SuppressWarnings("unchecked")
 public class AIMC extends Observable {
-	// Animation and drawing
-    Thread currentThread;  
-    boolean isPaused = false;
-    int sleepTime = 50;   
-
     // Number of lanes
     int k = 4;
 
@@ -19,7 +14,7 @@ public class AIMC extends Observable {
     public boolean[] departFlag = new boolean[k];
 
     // Avg time between arrivals = 1.0 (lambda)
-    double arrivalRate = 1.0;
+    double arrivalRate = 5.0;
     double serviceRate = 1.0;
 
     private PriorityQueue<Event> eventList;
@@ -116,8 +111,7 @@ public class AIMC extends Observable {
 
     	numArrivals++;
 
-        carList[e.fromLane].add(new Car(e.eventTime, e.direction, e.fromLane, e.carID));
-      
+        carList[e.fromLane].add(new Car(e.eventTime, e.direction, e.fromLane, e.carID));      
         scheduleDeparture(e);  
 
 
@@ -134,6 +128,7 @@ public class AIMC extends Observable {
     	//     scheduleDeparture(k);
     	// }
 
+        // Schedule the next arrival
     	scheduleArrival();
     }
 
