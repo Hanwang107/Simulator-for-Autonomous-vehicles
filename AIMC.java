@@ -1,6 +1,6 @@
 import java.util.*;
 /** 
-*  CSCI 6341/ Final Project: Automatic Crossroads Control and Management
+*  CSCI 6341/ Final Project: Automatic Intersection Management and Control
 *  Author: Ismayil Hasanov, Yubo Tsai, Han Wang
 *  Date : Apr 25 2017
 *  Description: Queue controller and algorithms for AIMC
@@ -20,7 +20,7 @@ public class AIMC extends Observable {
 
     // Avg time between arrivals = 1.0 (lambda)
     double arrivalRate = 2.0;
-    double serviceRate = 0.75;
+    double serviceRate = 1.0;
 
     private PriorityQueue<Event> eventList;
     private Event currentEvent = null;
@@ -177,7 +177,7 @@ public class AIMC extends Observable {
         eventList.add(eventDeparture);
 
         // Debugging
-        System.out.println("Main departure scheduled ~> " + eventDeparture);
+        // System.out.println("Main departure scheduled ~> " + eventDeparture);
         // System.out.println("Car " + e.carID + " will depart at " + nextDepartureTime);
         //TO check if any car can be scheduled/go simultaneously
         allowTraffic(eventDeparture);
@@ -190,7 +190,7 @@ public class AIMC extends Observable {
         eventList.add(eventDeparture);
 
         // Debugging
-        System.out.println("Simultaneous departure scheduled -> " + eventDeparture);     
+        // System.out.println("Simultaneous departure scheduled -> " + eventDeparture);     
         // System.out.println("================ allowTraffic is scheduling: ==========");
         // System.out.println("Event's CarID, fromLane, time: " + e.carID+", " +e.fromLane + ", "+e.direction+", "+e.eventTime);
         // System.out.println("Other Cars "+car.carID+" will depart at " + nextDepartureTime);
@@ -227,7 +227,7 @@ public class AIMC extends Observable {
 
             // Left car
             if (car.fromLane == (fromLane + 1) % 4 && car.direction == right) {
-                System.out.println("Checking left...");
+                // System.out.println("Checking left...");
                 if (removeDuplicateEvent(car.carID, Event.DEPARTURE, e.eventTime)) {
                     scheduleDeparture(e, car);
                 }
@@ -243,7 +243,7 @@ public class AIMC extends Observable {
             // opposite car
             if (Math.abs(car.fromLane - fromLane) == 2) {
                 if (fromLane != left && car.direction != left) {
-                    System.out.println("Checking opposite...");
+                    // System.out.println("Checking opposite...");
                     if (removeDuplicateEvent(car.carID, Event.DEPARTURE, e.eventTime)) {
                         scheduleDeparture(e, car);
                     }
@@ -260,7 +260,7 @@ public class AIMC extends Observable {
             // right car        
             if (fromLane == (car.fromLane + 1) % 4) {
                 if (direction == right && car.direction == right) {
-                    System.out.println("Checking right...");
+                    // System.out.println("Checking right...");
                     if (removeDuplicateEvent(car.carID, Event.DEPARTURE, e.eventTime)) {
                         scheduleDeparture(e, car);
                     }
@@ -284,7 +284,7 @@ public class AIMC extends Observable {
             if (event.carID == carID && event.type == type && departureTime < event.eventTime) {
                 it.remove();
                 // Debugging
-                System.out.println("Duplicate removed => " + event);
+                // System.out.println("Duplicate removed => " + event);
                 return true;
             }
         }
@@ -324,16 +324,30 @@ public class AIMC extends Observable {
     ///////////////////////////////////////////////////////////////////
     //main
     public static void main(String[] argv) {
-        AIMC aimc = new AIMC();
-        int maxDepartures = 300;
-        while (aimc.numDepartures < maxDepartures) {
-            aimc.nextStep();
+        int k = 4;
+        Function[] F = new Function[k];
+        for (int j = 0; j < k; j++) {
+            F[j] = new Function("Avg system time for lane " + j);
+        }
+          
+        double epsilon = 0.1;
+        double endLambda = 10;
+        for(double lambda = epsilon; lambda < endLambda; lambda += epsilon) {
+            AIMC aimc = new AIMC();
+            aimc.arrivalRate = lambda;
+            int maxDepartures = 1000;
+            while (aimc.numDepartures < maxDepartures) {
+                aimc.nextStep();
+            }
+
+            System.out.println("Arrival rate = " + lambda);
+            for (int i = 0; i < aimc.k; i++) {
+                System.out.println("Average system time for lane " + i + ": " + aimc.avgSysTime[i]);
+                F[i].add(lambda, aimc.avgSysTime[i]);
+            }            
         }
 
-        // System.out.println("Avg wait time: " + aimc.totalWaitTime);
-        for (int i = 0; i < aimc.k; i++) {
-            System.out.println("Average system time for lane " + i + ": " + aimc.avgSysTime[i]);
-        }
+        Function.show(F[0], F[1], F[2], F[3]);
     } 
 }
 
