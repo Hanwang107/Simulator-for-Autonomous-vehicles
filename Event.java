@@ -15,11 +15,11 @@ import javax.swing.event.*;
 
 class Event implements Comparable {
     public static int ARRIVAL = 1;
-    public static int DEPARTURE = 2;
-
-    public static int LEFT = 2;
-    public static int STRAIGHT = 1;
+    public static int DEPARTURE = 2;    
+    
     public static int RIGHT = 0;
+    public static int STRAIGHT = 1;
+    public static int LEFT = 2;
 
     int type = -1;                     // Arrival or departure.
     double eventTime;                  // When it occurs.
@@ -52,6 +52,23 @@ class Event implements Comparable {
     public boolean equals(Object obj)
     {
         return (compareTo(obj) == 0);
+    }
+
+    public String toString()
+    {
+        String strType = "departure";
+        if (type == 1) {
+            strType = "arrival";
+        }
+
+        String strDirection = "right";
+        if (direction == 1) {
+            strDirection = "straight";
+        } else if (direction == 2) {
+            strDirection = "left";
+        }
+
+        return "[Event]: carID="+carID+" time="+eventTime+" lane="+fromLane+" type="+strType+" direction="+strDirection;
     }
 
 }
