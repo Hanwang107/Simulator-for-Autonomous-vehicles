@@ -25,13 +25,16 @@ public class AIMCGUI extends JPanel implements Observer {
     boolean isDeparture = false;
     Thread currentThread;  
     boolean isPaused = false;
-    int sleepTime = 500;
+    int sleepTime = 200;
     //DecimalFormat df = new DecimalFormat ("##.####");
 
     PriorityQueue<Car>[] carList;
 
 	private AIMC aimc;
     private Event currentEvent;
+    private double currentEventTime = 0;
+    private double prevEventTime = 0;
+    private int currentNumDeparture = 0;
     private int arrowDirection;
 
     // Car direction
@@ -69,8 +72,22 @@ public class AIMCGUI extends JPanel implements Observer {
         g2.setColor (Color.white);
         g2.fillRect (0,0, D.width,D.height);
 
-        g2.setStroke(new BasicStroke(2f));  
+        g2.setStroke(new BasicStroke(2f));
 
+        // Time text
+        g2.setColor (Color.red);
+        String timeText = "Time: " + currentEventTime;
+        g2.drawString(timeText, offset, offset/2);
+
+        // Number of departures text
+        String numDepText = "Departure: " + currentNumDeparture;
+        g2.drawString(numDepText, D.width / 2 + roadLength - roadWidth, offset/2);
+
+        // Simultaneous departure text
+        if (currentEventTime != 0 && currentEventTime == prevEventTime) {
+            String warnText = "~~ Simultaneous departure occured ~~";
+            g2.drawString(warnText, D.width  - 2 * (roadLength + roadWidth), D.height - offset/2);
+        }
         // Draw left road.
         g2.setColor (Color.black);
         g2.drawLine (offset, D.height / 2 - roadWidth, offset + roadLength, D.height / 2 - roadWidth); // lane 0
@@ -379,11 +396,18 @@ public class AIMCGUI extends JPanel implements Observer {
 
     void nextStep() {
         aimc.nextStep();
+        currentEvent = aimc.getCurrentEvent();
+        currentNumDeparture = aimc.numDepartures;
+        currentEventTime = currentEvent.eventTime;
+        prevEventTime = aimc.prevEventTime;
         repaint();
     }
 
     void reset() {
         pause();
+        currentEventTime = 0;
+        currentNumDeparture = 0;
+        prevEventTime = 0;
         aimc.reset();
         repaint();
     }

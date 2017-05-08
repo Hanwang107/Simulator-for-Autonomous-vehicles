@@ -19,7 +19,7 @@ public class AIMC extends Observable {
     public boolean[] departFlag = new boolean[k];
 
     // Avg time between arrivals = 1.0 (lambda)
-    double arrivalRate = 2.0;
+    double arrivalRate = 1.0;
     double serviceRate = 1.0;
 
     private PriorityQueue<Event> eventList;
@@ -37,6 +37,8 @@ public class AIMC extends Observable {
 
     double totalWaitTime, avgWaitTime;      // For time spent in queue
     double totalSystemTime, avgSystemTime;  // For time spent in system
+
+    double prevEventTime;
 
     //Event direction
     double left = Event.LEFT;
@@ -68,12 +70,17 @@ public class AIMC extends Observable {
     	avgWaitTime = totalWaitTime = 0;
     	avgSystemTime = totalSystemTime = 0;
 
+        prevEventTime = 0;
+
     	// Need to have at least one event in event list
         clock = 0;
         scheduleArrival();
     }
 
     void nextStep() {
+        if (currentEvent != null) {
+            prevEventTime = currentEvent.eventTime;
+        }
 
     	// Event list empty?
     	if (eventList.isEmpty()) {
@@ -137,7 +144,6 @@ public class AIMC extends Observable {
         //remove it from carList, set departFlag for that lane
         Car car = carList[e.fromLane].poll();
         departFlag[e.fromLane] = true;
-
         
         sysTime[e.fromLane] += clock - car.arrivalTime;
 
@@ -146,24 +152,13 @@ public class AIMC extends Observable {
         // System.out.println("Car " + e.carID + " departs from lane " + e.fromLane + " to " + e.direction);
         // System.out.println("Departure #: " + numDepartures);
         // System.out.println("Waiting cars: 0=" + carList[0].size() + ", 1=" + carList[1].size() + ", 2=" + carList[2].size() + ", 3=" + carList[3].size());
-
-
-    	//Car c = queues[direction].removeFirst();
-
-    	// if (queues[direction].size() > 0) {
-    	//     // There's a waiting customer => schedule departure.
-    	//     Car waitingCar = queues[direction].get(0);
-    	//     // Note where we are collecting stats for waiting time.
-    	//     totalWaitTime += clock - waitingCar.entryTime;
-    	//     scheduleDeparture(direction);
-    	// }
     }
 
     private void scheduleArrival() {
-        int fromLane = RandTool.uniform(0,3);
-    	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
+        int fromLane = RandTool.uniform(0,k-1);
+        double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
         int direction = RandTool.uniform(0,2);
-    	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction));
+        eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction));
 
         // Debugging
         // System.out.println("Car " + carID + " will arrive at " + nextArrivalTime);
@@ -291,19 +286,21 @@ public class AIMC extends Observable {
         return false;
     }
 
-    double randomInterarrivalTime(int i) {
+    ///////////////////////////////////////////////////////////////////
+    // utility methods
+    private double randomInterarrivalTime(int i) {
         return exponential(arrivalRate);
     }
 
-    double randomServiceTime() {
+    private double randomServiceTime() {
         return exponential(serviceRate);
     }
 
-    double exponential(double lambda) {
+    private double exponential(double lambda) {
         return (1.0 / lambda) * (- Math.log(1.0 - RandTool.uniform()));
     }
 
-    void stats(Event e) {
+    private void stats(Event e) {
         if (numDepartures == 0) {
             return;
         }
@@ -320,35 +317,39 @@ public class AIMC extends Observable {
     public Event getCurrentEvent() {
         return currentEvent;
     }
+    // end utility methods
+    ///////////////////////////////////////////////////////////////////
 
     ///////////////////////////////////////////////////////////////////
-    //main
+    // main
     public static void main(String[] argv) {
         int k = 4;
         Function[] F = new Function[k];
         for (int j = 0; j < k; j++) {
-            F[j] = new Function("Avg system time for lane " + j);
+            F[j] = new Function("Avg system time vs lambda, lane " + j);
         }
           
-        double epsilon = 0.1;
-        double endLambda = 10;
+        double epsilon = 1;
+        double endLambda = 100;
         for(double lambda = epsilon; lambda < endLambda; lambda += epsilon) {
             AIMC aimc = new AIMC();
             aimc.arrivalRate = lambda;
-            int maxDepartures = 1000;
+            int maxDepartures = 10000;
             while (aimc.numDepartures < maxDepartures) {
                 aimc.nextStep();
             }
 
             System.out.println("Arrival rate = " + lambda);
             for (int i = 0; i < aimc.k; i++) {
-                System.out.println("Average system time for lane " + i + ": " + aimc.avgSysTime[i]);
+                // System.out.println("Average system time for lane " + i + ": " + aimc.avgSysTime[i]);
                 F[i].add(lambda, aimc.avgSysTime[i]);
             }            
         }
 
         Function.show(F[0], F[1], F[2], F[3]);
-    } 
+    }
+    // end main
+    ///////////////////////////////////////////////////////////////////
 }
 
 
