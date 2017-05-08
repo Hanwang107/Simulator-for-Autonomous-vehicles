@@ -10,21 +10,17 @@ public class AIMC extends Observable {
 	// Animation and drawing
     Thread currentThread;  
     boolean isPaused = false;
-    int sleepTime = 50;
-    
-    //LinkedList<Car>[] queues;    
+    int sleepTime = 50;   
 
     // Number of lanes
-    private int k = 4;
+    int k = 4;
 
+    // Flag used in the GUI departure drawing
     public boolean[] departFlag = new boolean[k];
 
-    // Avg time between arrivals = 1.0 (lambda). Can be changed via setter
-    private double arrivalRate = 1.0;
-
-    // Assignment 4: Assume the service time is the same at all the servers,
-    // and that each service time is exponentially distributed with mean 1.0
-    private double serviceRate = 1.0;
+    // Avg time between arrivals = 1.0 (lambda)
+    double arrivalRate = 2.0;
+    double serviceRate = 0.75;
 
     private PriorityQueue<Event> eventList;
     private Event currentEvent = null;
@@ -33,11 +29,14 @@ public class AIMC extends Observable {
 
 
     // Statistics.
-    int numArrivals;                        // How many arrived?
-    int numDepartures;                      // How many left?
+    int numArrivals;                            // Number of arrivals
+    int numDepartures;                          // Number of departures
+    int[] numDeparturesFromLane = new int[k];   // Departures per lane
+    double[] sysTime = new double[k];           // Time spent per lane
+    double[] avgSysTime = new double[k];        // Average time spent per lane
+
     double totalWaitTime, avgWaitTime;      // For time spent in queue
     double totalSystemTime, avgSystemTime;  // For time spent in system
-
 
     //Event direction
     double left = Event.LEFT;
@@ -56,16 +55,20 @@ public class AIMC extends Observable {
         for (int i = 0; i < k; i++) {
             carList[i] = new PriorityQueue<Car>();
             departFlag[i] = false;
+            // Stats reset
+            sysTime[i] = 0;
+            avgSysTime[i] = 0;
+            numDeparturesFromLane[i] = 0;     
         }
 
-	   // Initialize stats variables.
+	   // Stats reset
         carID = 1;
         numArrivals = 0;
     	numDepartures = 0;
     	avgWaitTime = totalWaitTime = 0;
     	avgSystemTime = totalSystemTime = 0;
 
-    	// Need to have at least one event in event list.
+    	// Need to have at least one event in event list
         clock = 0;
         scheduleArrival();
     }
@@ -94,19 +97,10 @@ public class AIMC extends Observable {
     	}
 
     	// Do stats after event is processed.
-    	stats();
-
-    	// if (numDepartures % 1000 == 0) {
-    	//     System.out.println ("After " + numDepartures + " departures: avgWait=" + avgWaitTime
-        //            + "  avgSystemTime=" + avgSystemTime);
-    	// }
+    	stats(currentEvent);
     }
 
-    void handleArrival(Event e) {
-    	// For an arrival, we need to put the car in a queue, and
-    	// schedule a departure for that queue if there isn't one scheduled.
-    	// Lastly, we need to schedule the next arrival.
-
+    private void handleArrival(Event e) {
         //Debugging
         //System.out.println("**********************************************************");
         //System.out.println("Car " + e.carID + " arrives at lane " + e.fromLane + " and turns to " + e.direction);
@@ -136,17 +130,16 @@ public class AIMC extends Observable {
     	scheduleArrival();
     }
 
-    void handleDeparture(Event e) {
-    	// For a departure from a queue, remove the customer from 
-    	// that particular queue, then schedule the next departure
-    	// if that queue has waiting customers.
+    private void handleDeparture(Event e) {
     	numDepartures++;
-
-        totalSystemTime += clock - e.eventTime;
+        numDeparturesFromLane[e.fromLane]++;
     	
         //remove it from carList, set departFlag for that lane
         Car car = carList[e.fromLane].poll();
         departFlag[e.fromLane] = true;
+
+        
+        sysTime[e.fromLane] += clock - car.arrivalTime;
 
         //Debugging
         //System.out.println("****************");
@@ -166,9 +159,46 @@ public class AIMC extends Observable {
     	// }
     }
 
+    private void scheduleArrival() {
+        int fromLane = RandTool.uniform(0,3);
+    	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
+        int direction = RandTool.uniform(0,2);
+    	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction));
+
+        // Debugging
+        // System.out.println("Car " + carID + " will arrive at " + nextArrivalTime);
+        carID ++;
+    }    
+
+    // Schdule departure for the main car
+    private void scheduleDeparture(Event e) {
+        double nextDepartureTime = clock + randomServiceTime();
+        Event eventDeparture = new Event(nextDepartureTime, Event.DEPARTURE, e.fromLane, e.carID, e.direction);
+        eventList.add(eventDeparture);
+
+        // Debugging
+        System.out.println("Main departure scheduled ~> " + eventDeparture);
+        // System.out.println("Car " + e.carID + " will depart at " + nextDepartureTime);
+        //TO check if any car can be scheduled/go simultaneously
+        allowTraffic(eventDeparture);
+    }
+
+    //Schedule departure for cars from other lanes simultaneously
+    private void scheduleDeparture(Event e, Car car) {
+        double nextDepartureTime = e.eventTime;
+        Event eventDeparture = new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane, car.carID, car.direction);
+        eventList.add(eventDeparture);
+
+        // Debugging
+        System.out.println("Simultaneous departure scheduled -> " + eventDeparture);     
+        // System.out.println("================ allowTraffic is scheduling: ==========");
+        // System.out.println("Event's CarID, fromLane, time: " + e.carID+", " +e.fromLane + ", "+e.direction+", "+e.eventTime);
+        // System.out.println("Other Cars "+car.carID+" will depart at " + nextDepartureTime);
+    }
+
     // Simultaneous going strategy
-    void allowTraffic(Event e) {
-    	int direction = e.direction;
+    private void allowTraffic(Event e) {
+        int direction = e.direction;
         int fromLane = e.fromLane;
 
         // allow queues for car
@@ -179,9 +209,9 @@ public class AIMC extends Observable {
                 continue;
             }
 
-        	if (i != fromLane) {
-        		allowedCars.add(carList[i].peek());
-        	}
+            if (i != fromLane) {
+                allowedCars.add(carList[i].peek());
+            }
         }
 
         if (allowedCars.size() == 0) {
@@ -244,44 +274,7 @@ public class AIMC extends Observable {
                 }
             }
         }
-    }
-
-    void scheduleArrival() {
-        int fromLane = RandTool.uniform(0,3);
-    	double nextArrivalTime = clock + randomInterarrivalTime(fromLane);
-        int direction = RandTool.uniform(0,2);
-    	eventList.add(new Event(nextArrivalTime, Event.ARRIVAL, fromLane, carID, direction));
-
-        // Debugging
-        // System.out.println("Car " + carID + " will arrive at " + nextArrivalTime);
-        carID ++;
     }    
-
-    // Schdule departure for the main car
-    void scheduleDeparture(Event e) {
-        double nextDepartureTime = clock + randomServiceTime();
-        Event eventDeparture = new Event(nextDepartureTime, Event.DEPARTURE, e.fromLane, e.carID, e.direction);
-        eventList.add(eventDeparture);
-
-        // Debugging
-        System.out.println("Main departure scheduled ~> " + eventDeparture);
-        // System.out.println("Car " + e.carID + " will depart at " + nextDepartureTime);
-        //TO check if any car can be scheduled/go simultaneously
-        allowTraffic(eventDeparture);
-    }
-
-    //Schedule departure for cars from other lanes simultaneously
-    private void scheduleDeparture(Event e, Car car) {
-        double nextDepartureTime = e.eventTime;
-        Event eventDeparture = new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane, car.carID, car.direction);
-        eventList.add(eventDeparture);
-
-        // Debugging
-        System.out.println("Simultaneous departure scheduled -> " + eventDeparture);     
-        // System.out.println("================ allowTraffic is scheduling: ==========");
-        // System.out.println("Event's CarID, fromLane, time: " + e.carID+", " +e.fromLane + ", "+e.direction+", "+e.eventTime);
-        // System.out.println("Other Cars "+car.carID+" will depart at " + nextDepartureTime);
-    }
 
     private boolean removeDuplicateEvent(int carID, int type, double departureTime) {
         Event event;
@@ -310,12 +303,12 @@ public class AIMC extends Observable {
         return (1.0 / lambda) * (- Math.log(1.0 - RandTool.uniform()));
     }
 
-    void stats() {
+    void stats(Event e) {
         if (numDepartures == 0) {
             return;
         }
-        avgWaitTime = totalWaitTime / numDepartures;
-        avgSystemTime = totalSystemTime / numDepartures;
+        //avgWaitTime = totalWaitTime / numDepartures[e.fromLane];
+        avgSysTime[e.fromLane] = sysTime[e.fromLane] / numDeparturesFromLane[e.fromLane];
     }
 
     // getter for carList
@@ -335,6 +328,11 @@ public class AIMC extends Observable {
         int maxDepartures = 300;
         while (aimc.numDepartures < maxDepartures) {
             aimc.nextStep();
+        }
+
+        // System.out.println("Avg wait time: " + aimc.totalWaitTime);
+        for (int i = 0; i < aimc.k; i++) {
+            System.out.println("Average system time for lane " + i + ": " + aimc.avgSysTime[i]);
         }
     } 
 }
