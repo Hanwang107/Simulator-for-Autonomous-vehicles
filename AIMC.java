@@ -14,7 +14,7 @@ public class AIMC extends Observable {
     public boolean[] departFlag = new boolean[k];
 
     // Avg time between arrivals = 1.0 (lambda)
-    double arrivalRate = 5.0;
+    double arrivalRate = 4.0;
     double serviceRate = 1.0;
 
     private PriorityQueue<Event> eventList;
@@ -35,10 +35,10 @@ public class AIMC extends Observable {
 
     double prevEventTime;
 
-    //Event direction
-    double left = Event.LEFT;
-    double right = Event.RIGHT;
-    double straight = Event.STRAIGHT;
+    // Event direction
+    int left = Event.LEFT;
+    int right = Event.RIGHT;
+    int straight = Event.STRAIGHT;
 
     int carID = 1;
 
@@ -93,7 +93,7 @@ public class AIMC extends Observable {
     	}
     	else if (currentEvent.type == Event.DEPARTURE) {
             handleDeparture(currentEvent);
-            // Let GUI know the departure occured
+            // Let GUI know the departure occurred
             setChanged();
             notifyObservers();    	    
     	}
@@ -103,30 +103,15 @@ public class AIMC extends Observable {
     }
 
     private void handleArrival(Event e) {
-        //Debugging
-        //System.out.println("**********************************************************");
-        //System.out.println("Car " + e.carID + " arrives at lane " + e.fromLane + " and turns to " + e.direction);
-        //System.out.println("The size of this lane: " + carList[e.fromLane].size());
-
+        // Debugging
+        // System.out.println("**********************************************************");
+        // System.out.println("Car " + e.carID + " arrives at lane " + e.fromLane + " and turns to " + e.direction);
+        // System.out.println("The size of this lane: " + carList[e.fromLane].size());
 
     	numArrivals++;
 
         carList[e.fromLane].add(new Car(e.eventTime, e.direction, e.fromLane, e.carID));      
-        scheduleDeparture(e);  
-
-
-        // TO check if any car can be allowed simultaneous
-        //allowTraffic(e);
-
-        // Choosing queue policy with the passed boolean variable:
-        // true=random, false=shortest
-        
-    	//queues[e.direction].add(new Car (clock));
-
-    	// if (queues[].size() == 1) {
-    	//     // This is the only customer => schedule a departure.
-    	//     scheduleDeparture(k);
-    	// }
+        scheduleDeparture(e);
 
         // Schedule the next arrival
     	scheduleArrival();
@@ -142,8 +127,8 @@ public class AIMC extends Observable {
         
         sysTime[e.fromLane] += clock - car.arrivalTime;
 
-        //Debugging
-        //System.out.println("****************");
+        // Debugging
+        // System.out.println("****************");
         // System.out.println("Car " + e.carID + " departs from lane " + e.fromLane + " to " + e.direction);
         // System.out.println("Departure #: " + numDepartures);
         // System.out.println("Waiting cars: 0=" + carList[0].size() + ", 1=" + carList[1].size() + ", 2=" + carList[2].size() + ", 3=" + carList[3].size());
@@ -160,7 +145,7 @@ public class AIMC extends Observable {
         carID ++;
     }    
 
-    // Schdule departure for the main car
+    // Schedule departure for the main car
     private void scheduleDeparture(Event e) {
         double nextDepartureTime = clock + randomServiceTime();
         Event eventDeparture = new Event(nextDepartureTime, Event.DEPARTURE, e.fromLane, e.carID, e.direction);
@@ -169,11 +154,11 @@ public class AIMC extends Observable {
         // Debugging
         // System.out.println("Main departure scheduled ~> " + eventDeparture);
         // System.out.println("Car " + e.carID + " will depart at " + nextDepartureTime);
-        //TO check if any car can be scheduled/go simultaneously
+        // To check if any car can be scheduled/go simultaneously
         allowTraffic(eventDeparture);
     }
 
-    //Schedule departure for cars from other lanes simultaneously
+    // Schedule departure for cars from other lanes simultaneously
     private void scheduleDeparture(Event e, Car car) {
         double nextDepartureTime = e.eventTime;
         Event eventDeparture = new Event(nextDepartureTime, Event.DEPARTURE, car.fromLane, car.carID, car.direction);
@@ -191,9 +176,9 @@ public class AIMC extends Observable {
         int direction = e.direction;
         int fromLane = e.fromLane;
 
-        // allow queues for car
+        // Allowed cars queue
         PriorityQueue<Car> allowedCars = new PriorityQueue<Car>();
-        //Get the first three cars from other lanes.
+        // Get the first three cars from other lanes
         for (int i = 0; i < k; i++) {
             if (carList[i].size() == 0) {
                 continue;
@@ -209,9 +194,9 @@ public class AIMC extends Observable {
         }
 
 
-        Iterator it = allowedCars.iterator();
+        Iterator<Car> it = allowedCars.iterator();
         while (it.hasNext()) {
-            Car car = (Car) it.next();
+            Car car = /*(Car)*/ it.next();
             // Debugging
             // System.out.println(" CarID: " + car.carID+", " +car.fromLane + ", "+car.direction);
 
@@ -222,7 +207,7 @@ public class AIMC extends Observable {
                     scheduleDeparture(e, car);
                 }
 
-                //Remove this car from carlist and eventlist
+                // Remove this car from carlist and eventlist
                 // Car carToBeRemoved = carList[fromLane].peek();
                 // allowedCars.remove(carToBeRemoved);
 
@@ -230,15 +215,15 @@ public class AIMC extends Observable {
                 continue;                   
             } 
 
-            // opposite car
+            // Opposite car
             if (Math.abs(car.fromLane - fromLane) == 2) {
                 if (fromLane != left && car.direction != left) {
                     // System.out.println("Checking opposite...");
                     if (removeDuplicateEvent(car.carID, Event.DEPARTURE, e.eventTime)) {
                         scheduleDeparture(e, car);
                     }
-                    //System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);
-                    //Remove this car from carlist and eventlist
+                    // System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);
+                    // Remove this car from carlist and eventlist
                     // Car carToBeRemoved = carList[fromLane].peek();
                     // allowedCars.remove(carToBeRemoved);
 
@@ -247,15 +232,15 @@ public class AIMC extends Observable {
                 }
             }
 
-            // right car        
+            // Right car        
             if (fromLane == (car.fromLane + 1) % 4) {
                 if (direction == right && car.direction == right) {
                     // System.out.println("Checking right...");
                     if (removeDuplicateEvent(car.carID, Event.DEPARTURE, e.eventTime)) {
                         scheduleDeparture(e, car);
                     }
-                    //System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);                    
-                    //Remove this car from carlist and eventlist
+                    // System.out.println(" CarID: " + car.carID+ " is gone at " + e.eventTime);                    
+                    // Remove this car from carlist and eventlist
                     // Car carToBeRemoved = carList[fromLane].peek();
                     // allowedCars.remove(carToBeRemoved);
 
@@ -268,9 +253,9 @@ public class AIMC extends Observable {
 
     private boolean removeDuplicateEvent(int carID, int type, double departureTime) {
         Event event;
-        Iterator it = eventList.iterator();
+        Iterator<Event> it = eventList.iterator();
         while (it.hasNext()) {
-            event = (Event) it.next();
+            event = it.next();
             if (event.carID == carID && event.type == type && departureTime < event.eventTime) {
                 it.remove();
                 // Debugging
@@ -299,7 +284,7 @@ public class AIMC extends Observable {
         if (numDepartures == 0) {
             return;
         }
-        //avgWaitTime = totalWaitTime / numDepartures[e.fromLane];
+        // avgWaitTime = totalWaitTime / numDepartures[e.fromLane];
         avgSysTime[e.fromLane] = sysTime[e.fromLane] / numDeparturesFromLane[e.fromLane];
     }
 
